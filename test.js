@@ -2,7 +2,7 @@
 var assert = require('assert');
 var fs = require('fs');
 var concat = require('concat-stream');
-var firstChunk = require('./index');
+var firstChunk = require('./');
 
 it('should should ensure the first chunk is minimum of a set size', function (cb) {
 	var i = 0;
