@@ -1,41 +1,63 @@
 'use strict';
 var assert = require('assert');
-var fs = require('fs');
-var concatStream = require('concat-stream');
 var firstChunkStream = require('./');
+var streamtest = require('streamtest');
 
-it('should should ensure the first chunk is minimum of a set size', function (cb) {
-	var i = 0;
+describe('firstChunk()', function () {
+	var content = 'unicorn rainbows \ncake';
 
-	var stream = fs.createReadStream('fixture', {highWaterMark: 1})
-		.pipe(firstChunkStream({minSize: 7}, function (chunk, enc, cb) {
-			i++;
-			this.push(chunk);
-			cb();
-		}));
+	streamtest.versions.forEach(function (version) {
 
-	stream.once('data', function (data) {
-		assert.strictEqual(data.toString(), 'unicorn');
+		describe('for ' + version + ' streams', function () {
+
+			it('should should work for a single oversized chunk', function (cb) {
+				streamtest[version].fromChunks([content])
+					.pipe(firstChunkStream(function (chunk, enc, cb) {
+						this.push(chunk);
+						cb();
+					}))
+					.pipe(streamtest[version].toText(function (err, text) {
+						if(err) {
+							return done(err);
+						}
+						assert.deepEqual(text, content);
+						cb();
+					}));
+			});
+
+
+			it('should should work for required size chunk', function (cb) {
+				streamtest[version].fromChunks([content.substr(0, 7), content.substr(7)])
+					.pipe(firstChunkStream({minSize: 7}, function (chunk, enc, cb) {
+						this.push(chunk);
+						cb();
+					}))
+					.pipe(streamtest[version].toText(function (err, text) {
+						if(err) {
+							return done(err);
+						}
+						assert.deepEqual(text, content);
+						cb();
+					}));
+			});
+
+			it('should should work for several small chunks', function (cb) {
+				streamtest[version].fromChunks(content.split(''))
+					.pipe(firstChunkStream(function (chunk, enc, cb) {
+						this.push(chunk);
+						cb();
+					}))
+					.pipe(streamtest[version].toText(function (err, text) {
+						if(err) {
+							return done(err);
+						}
+						assert.deepEqual(text, content);
+						cb();
+					}));
+			});
+
+		});
+
 	});
 
-	stream.pipe(concatStream(function (data) {
-		assert.deepEqual(data, fs.readFileSync('fixture'));
-	}));
-
-	stream.on('end', function () {
-		assert.strictEqual(i, 1);
-		cb();
-	});
-});
-
-it('should should work with default `highWaterMark`', function (cb) {
-	fs.createReadStream('fixture')
-		.pipe(firstChunkStream(function (chunk, enc, cb) {
-			this.push(chunk);
-			cb();
-		}))
-		.pipe(concatStream(function (data) {
-			assert.deepEqual(data, fs.readFileSync('fixture'));
-			cb();
-		}));
 });
