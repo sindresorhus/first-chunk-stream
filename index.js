@@ -6,6 +6,7 @@ var Duplex = require('stream').Duplex;
 function FirstChunkStream(options, cb) {
 	var _this = this;
 	var manager;
+	var errorHandler;
 
 	if (!(this instanceof FirstChunkStream)) {
 		return new FirstChunkStream(options, cb);
@@ -24,6 +25,21 @@ function FirstChunkStream(options, cb) {
 	Duplex.call(this, options);
 
 	manager = createReadStreamBackpressureManager(this);
+	errorHandler = function firstChunkStreamErrorHandler(err) {
+		setImmediate(function() {
+			_this.removeListener('error', errorHandler);
+		});
+		this.__firstChunkSent = true;
+		cb(err, Buffer.concat(_this.__firstChunkBuffer), {}.undef, function (err, buf) {
+			if(err) {
+				setImmediate(function() {
+					return _this.emit('error', err);
+				});
+			}
+			manager.programPush(buf, {}.undef, function() {});
+		});
+	};
+	this.on('error', errorHandler);
 
 	if (1 > options.firstChunkSize) {
 		this.__firstChunkSent = true;
@@ -47,6 +63,7 @@ function FirstChunkStream(options, cb) {
 				chunk = chunk.slice(options.firstChunkSize - _this.__firstChunkBufferSize);
 				_this.__firstChunkBufferSize += _this.__firstChunkBuffer[_this.__firstChunkBuffer.length - 1].length;
 				cb(null, Buffer.concat(_this.__firstChunkBuffer), encoding, function(err, buf) {
+					_this.removeListener('error', errorHandler);
 					_this.__firstChunkSent = true;
 					if(!(buf.length || chunk.length)) {
 						return done();

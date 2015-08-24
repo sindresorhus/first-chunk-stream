@@ -6,9 +6,120 @@ var streamtest = require('streamtest');
 describe('firstChunk()', function () {
 	var content = 'unicorn rainbows \ncake';
 
+	describe('should fail', function() {
+
+		it('when the callback is not providen', function() {
+			assert.throws(function() {
+				firstChunkStream({
+					firstChunkSize: 7
+				});
+			});
+		});
+
+		it('when firstChunk size is bad or missing', function() {
+			assert.throws(function() {
+				firstChunkStream({
+					firstChunkSize: 'feferf'
+				}, function() {});
+			});
+			assert.throws(function() {
+				firstChunkStream({}.undef, function() {});
+			});
+		});
+
+	});
+
 	streamtest.versions.forEach(function (version) {
 
 		describe('for ' + version + ' streams', function () {
+
+			describe('emitting errors', function () {
+
+				it('should report error in the callback before first chunk is sent and allow recovery', function (done) {
+					var callbackCalled = false;
+					var stream = firstChunkStream({firstChunkSize: 7}, function (err, chunk, enc, cb) {
+						assert.equal(err.message, 'Hey!');
+						assert.equal(chunk.toString('utf-8'), content.substr(0, 2));
+						callbackCalled = true;
+						cb(null, new Buffer(content.substr(0, 7)));
+					});
+
+					stream.pipe(streamtest[version].toText(function (err, text) {
+						if(err) {
+							return done(err);
+						}
+						assert.deepEqual(text, content);
+						assert(callbackCalled, 'Callback has been called.');
+						done();
+					}));
+
+					stream.write(new Buffer(content[0]));
+					stream.write(new Buffer(content[1]));
+					stream.emit('error', new Error('Hey!'));
+					stream.write(new Buffer(content.substr(7)));
+					stream.end();
+				});
+
+				it('should report error in the callback before first chunk is sent and reemit passed errors', function (done) {
+					var callbackCalled = false;
+					var errEmitted = false;
+					var stream = firstChunkStream({firstChunkSize: 7}, function (err, chunk, enc, cb) {
+						assert.equal(err.message, 'Hey!');
+						callbackCalled = true;
+						stream.on('error', function(err) {
+							assert.equal(err.message, 'Ho!');
+							errEmitted = true;
+						});
+						cb(new Error('Ho!'));
+					});
+
+					stream.pipe(streamtest[version].toText(function (err, text) {
+						if(err) {
+							return done(err);
+						}
+						assert.deepEqual(text, content.substr(7));
+						assert(callbackCalled, 'Callback has been called.');
+						assert(errEmitted, 'Error has been emitted.');
+						done();
+					}));
+
+					stream.write(new Buffer(content[0]));
+					stream.write(new Buffer(content[1]));
+					stream.emit('error', new Error('Hey!'));
+					stream.write(new Buffer(content.substr(7)));
+					stream.end();
+				});
+
+				it('should just emit errors when first chunk is sent', function (done) {
+					var callbackCalled = false;
+					var errEmitted = false;
+					var stream = firstChunkStream({firstChunkSize: 7}, function (err, chunk, enc, cb) {
+						callbackCalled = true;
+						cb(null, chunk);
+					});
+
+					stream.on('error', function(err) {
+						assert.equal(err.message, 'Hey!');
+						errEmitted = true;
+					});
+
+					stream.pipe(streamtest[version].toText(function (err, text) {
+						if(err) {
+							return done(err);
+						}
+						assert.deepEqual(text, content);
+						assert(callbackCalled, 'Callback has been called.');
+						assert(errEmitted, 'Error has been emitted.');
+						done();
+					}));
+
+					stream.write(new Buffer(content.substr(0, 7)));
+					stream.emit('error', new Error('Hey!'));
+					stream.write(new Buffer(content.substr(7)));
+					stream.end();
+				});
+
+			});
 
 			describe('and leaving content as is', function () {
 
