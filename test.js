@@ -16,6 +16,15 @@ describe('firstChunk()', function () {
 			});
 		});
 
+		it('when trying to use it in objectMode', function() {
+			assert.throws(function() {
+				firstChunkStream({
+					firstChunkSize: 7,
+					objectMode: true
+				}, function() {});
+			});
+		});
+
 		it('when firstChunk size is bad or missing', function() {
 			assert.throws(function() {
 				firstChunkStream({

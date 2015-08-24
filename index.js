@@ -22,6 +22,10 @@ function FirstChunkStream(options, cb) {
 		throw new Error('FirstChunkStream constructor requires options.firstChunkSize to be a number.');
 	}
 
+	if (options.objectMode) {
+		throw new Error('FirstChunkStream doesn\'t support the objectMode yet.');
+	}
+
 	Duplex.call(this, options);
 
 	manager = createReadStreamBackpressureManager(this);
