@@ -1,93 +1,113 @@
 'use strict';
+
 var util = require('util');
-var Transform = require('stream').Transform;
+var Duplex = require('stream').Duplex;
 
-function ctor(options, transform) {
-	util.inherits(FirstChunk, Transform);
+function FirstChunkStream(options, cb) {
+	var _this = this;
+	var manager;
 
-	if (typeof options === 'function') {
-		transform = options;
-		options = {};
+	if (!(this instanceof FirstChunkStream)) {
+		return new FirstChunkStream(options, cb);
 	}
 
-	if (typeof transform !== 'function') {
-		throw new Error('transform function required');
+	options = options || {};
+
+	if (!(cb instanceof Function)) {
+		throw new Error('FirstChunkStream constructor requires a callback as its second argument.');
 	}
 
-	function FirstChunk(options2) {
-		if (!(this instanceof FirstChunk)) {
-			return new FirstChunk(options2);
-		}
-
-		Transform.call(this, options2);
-
-		this._firstChunk = true;
-		this._transformCalled = false;
-		this._minSize = options.minSize;
+	if ('number' !== typeof options.firstChunkSize) {
+		throw new Error('FirstChunkStream constructor requires options.firstChunkSize to be a number.');
 	}
 
-	FirstChunk.prototype._transform = function (chunk, enc, cb) {
-		this._enc = enc;
+	Duplex.call(this, options);
 
-		if (this._firstChunk) {
-			this._firstChunk = false;
+	manager = createReadStreamBackpressureManager(this);
 
-			if (this._minSize == null) {
-				transform.call(this, chunk, enc, cb);
-				this._transformCalled = true;
-				return;
-			}
+	if (1 > options.firstChunkSize) {
+		this.__firstChunkSent = true;
+	} else {
+		this.__firstChunkSent = false;
+	}
 
-			this._buffer = chunk;
-			cb();
-			return;
-		}
+	this.__firstChunkBuffer = [];
+	this.__firstChunkBufferSize = 0;
 
-		if (this._minSize == null) {
-			this.push(chunk);
-			cb();
-			return;
-		}
-
-		if (this._buffer.length < this._minSize) {
-			this._buffer = Buffer.concat([this._buffer, chunk]);
-			cb();
-			return;
-		}
-
-		if (this._buffer.length >= this._minSize) {
-			transform.call(this, this._buffer.slice(), enc, function () {
-				this.push(chunk);
-				cb();
-			}.bind(this));
-			this._transformCalled = true;
-			this._buffer = false;
-			return;
-		}
-
-		this.push(chunk);
-		cb();
-	};
-
-	FirstChunk.prototype._flush = function (cb) {
-		if (!this._buffer) {
-			cb();
-			return;
-		}
-
-		if (this._transformCalled) {
-			this.push(this._buffer);
-			cb();
+	this._write = function firstChunkStreamWrite(chunk, encoding, done) {
+		if(_this.__firstChunkSent) {
+      manager.programPush(chunk, encoding, done);
 		} else {
-			transform.call(this, this._buffer.slice(), this._enc, cb);
+			if(chunk.length < options.firstChunkSize - _this.__firstChunkBufferSize) {
+				_this.__firstChunkBuffer.push(chunk);
+				_this.__firstChunkBufferSize += chunk.length;
+				done();
+			} else {
+				_this.__firstChunkBuffer.push(chunk.slice(0, options.firstChunkSize - _this.__firstChunkBufferSize));
+				chunk = chunk.slice(options.firstChunkSize - _this.__firstChunkBufferSize);
+				_this.__firstChunkBufferSize += _this.__firstChunkBuffer[_this.__firstChunkBuffer.length - 1].length;
+				cb(null, Buffer.concat(_this.__firstChunkBuffer), encoding, function(err, buf) {
+					_this.__firstChunkSent = true;
+					if(!(buf.length || chunk.length)) {
+						return done();
+					}
+					manager.programPush(Buffer.concat([buf, chunk]), encoding, done);
+				});
+			}
 		}
 	};
 
-	return FirstChunk;
+  this.on('finish', function firstChunkStreamFinish() {
+		if(!_this.__firstChunkSent) {
+			cb(new Error('Couldn\'t get the firstChunk!'), Buffer.concat(_this.__firstChunkBuffer));
+		}
+    manager.programPush(null, {}.undef, function() {});
+  });
 }
 
-module.exports = function () {
-	return ctor.apply(ctor, arguments)();
-};
+util.inherits(FirstChunkStream, Duplex);
 
-module.exports.ctor = ctor;
+// Utils to manage readable stream backpressure
+function createReadStreamBackpressureManager(readableStream) {
+  var manager = {
+    waitPush: true,
+    programmedPushs: [],
+    programPush: function programPush(chunk, encoding, done) {
+      // Store the current write
+      manager.programmedPushs.push([chunk, encoding, done]);
+      // Need to be async to avoid nested push attempts
+      // Programm a push attempt
+      setImmediate(manager.attemptPush);
+      // Let's say we're ready for a read
+      readableStream.emit('readable');
+      readableStream.emit('drain');
+    },
+    attemptPush: function attemptPush() {
+      var nextPush;
+
+      if(manager.waitPush) {
+        if(manager.programmedPushs.length) {
+          nextPush = manager.programmedPushs.shift();
+          manager.waitPush = readableStream.push(nextPush[0], nextPush[1]);
+          (nextPush[2])();
+        }
+      } else {
+        setImmediate(function() {
+          // Need to be async to avoid nested push attempts
+          readableStream.emit('readable');
+        });
+      }
+    },
+  };
+
+  // Patch the readable stream to manage reads
+  readableStream._read = function streamFilterRestoreRead() {
+    manager.waitPush = true;
+    // Need to be async to avoid nested push attempts
+    setImmediate(manager.attemptPush);
+  };
+
+  return manager;
+}
+
+module.exports = FirstChunkStream;
