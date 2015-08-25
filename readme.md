@@ -18,7 +18,7 @@ var firstChunkStream = require('first-chunk-stream');
 
 // unicorn.txt => unicorn rainbow
 fs.createReadStream('unicorn.txt')
-	.pipe(firstChunkStream({firstChunkSize: 7}, function (chunk, enc, cb) {
+	.pipe(firstChunkStream({chunkLength: 7}, function (chunk, enc, cb) {
 		this.push(chunk.toUpperCase());
 		cb();
 	}))
@@ -37,7 +37,7 @@ Returns a `FirstChunkStream` instance.
 
 #### options
 
-##### options.firstChunkSize
+##### options.chunkLength
 
 Type: `number`
 
@@ -53,7 +53,7 @@ The options object is also passed to the `Duplex` stream constructor allowing
 *Required*  
 Type: `function`
 
-The function that gets the required `options.firstChunkSize` bytes.
+The function that gets the required `options.chunkLength` bytes.
 
 ## License
 

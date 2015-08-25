@@ -11,7 +11,7 @@ describe('firstChunk()', function () {
 		it('when the callback is not providen', function() {
 			assert.throws(function() {
 				firstChunkStream({
-					firstChunkSize: 7
+					chunkLength: 7
 				});
 			});
 		});
@@ -19,7 +19,7 @@ describe('firstChunk()', function () {
 		it('when trying to use it in objectMode', function() {
 			assert.throws(function() {
 				firstChunkStream({
-					firstChunkSize: 7,
+					chunkLength: 7,
 					objectMode: true
 				}, function() {});
 			});
@@ -28,7 +28,7 @@ describe('firstChunk()', function () {
 		it('when firstChunk size is bad or missing', function() {
 			assert.throws(function() {
 				firstChunkStream({
-					firstChunkSize: 'feferf'
+					chunkLength: 'feferf'
 				}, function() {});
 			});
 			assert.throws(function() {
@@ -46,7 +46,7 @@ describe('firstChunk()', function () {
 
 				it('should report error in the callback before first chunk is sent and allow recovery', function (done) {
 					var callbackCalled = false;
-					var stream = firstChunkStream({firstChunkSize: 7}, function (err, chunk, enc, cb) {
+					var stream = firstChunkStream({chunkLength: 7}, function (err, chunk, enc, cb) {
 						assert.equal(err.message, 'Hey!');
 						assert.equal(chunk.toString('utf-8'), content.substr(0, 2));
 						callbackCalled = true;
@@ -72,7 +72,7 @@ describe('firstChunk()', function () {
 				it('should report error in the callback before first chunk is sent and reemit passed errors', function (done) {
 					var callbackCalled = false;
 					var errEmitted = false;
-					var stream = firstChunkStream({firstChunkSize: 7}, function (err, chunk, enc, cb) {
+					var stream = firstChunkStream({chunkLength: 7}, function (err, chunk, enc, cb) {
 						assert.equal(err.message, 'Hey!');
 						callbackCalled = true;
 						stream.on('error', function(err) {
@@ -102,7 +102,7 @@ describe('firstChunk()', function () {
 				it('should just emit errors when first chunk is sent', function (done) {
 					var callbackCalled = false;
 					var errEmitted = false;
-					var stream = firstChunkStream({firstChunkSize: 7}, function (err, chunk, enc, cb) {
+					var stream = firstChunkStream({chunkLength: 7}, function (err, chunk, enc, cb) {
 						callbackCalled = true;
 						cb(null, chunk);
 					});
@@ -136,7 +136,7 @@ describe('firstChunk()', function () {
 					var callbackCalled = false;
 
 					streamtest[version].fromChunks([content])
-						.pipe(firstChunkStream({firstChunkSize: 7}, function (err, chunk, enc, cb) {
+						.pipe(firstChunkStream({chunkLength: 7}, function (err, chunk, enc, cb) {
 							if(err) {
 								return done(err);
 							}
@@ -159,7 +159,7 @@ describe('firstChunk()', function () {
 					var callbackCalled = false;
 
 					streamtest[version].fromChunks([content.substr(0, 7), content.substr(7)])
-						.pipe(firstChunkStream({firstChunkSize: 7}, function (err, chunk, enc, cb) {
+						.pipe(firstChunkStream({chunkLength: 7}, function (err, chunk, enc, cb) {
 							if(err) {
 								return done(err);
 							}
@@ -181,7 +181,7 @@ describe('firstChunk()', function () {
 					var callbackCalled = false;
 
 					streamtest[version].fromChunks(content.split(''))
-						.pipe(firstChunkStream({firstChunkSize: 7}, function (err, chunk, enc, cb) {
+						.pipe(firstChunkStream({chunkLength: 7}, function (err, chunk, enc, cb) {
 							if(err) {
 								return done(err);
 							}
@@ -207,7 +207,7 @@ describe('firstChunk()', function () {
 					var callbackCalled = false;
 
 					streamtest[version].fromChunks([content])
-						.pipe(firstChunkStream({firstChunkSize: 7}, function (err, chunk, enc, cb) {
+						.pipe(firstChunkStream({chunkLength: 7}, function (err, chunk, enc, cb) {
 							if(err) {
 								return done(err);
 							}
@@ -230,7 +230,7 @@ describe('firstChunk()', function () {
 					var callbackCalled = false;
 
 					streamtest[version].fromChunks([content.substr(0, 7), content.substr(7)])
-						.pipe(firstChunkStream({firstChunkSize: 7}, function (err, chunk, enc, cb) {
+						.pipe(firstChunkStream({chunkLength: 7}, function (err, chunk, enc, cb) {
 							if(err) {
 								return done(err);
 							}
@@ -252,7 +252,7 @@ describe('firstChunk()', function () {
 					var callbackCalled = false;
 
 					streamtest[version].fromChunks(content.split(''))
-						.pipe(firstChunkStream({firstChunkSize: 7}, function (err, chunk, enc, cb) {
+						.pipe(firstChunkStream({chunkLength: 7}, function (err, chunk, enc, cb) {
 							if(err) {
 								return done(err);
 							}

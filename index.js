@@ -18,8 +18,8 @@ function FirstChunkStream(options, cb) {
 		throw new Error('FirstChunkStream constructor requires a callback as its second argument.');
 	}
 
-	if ('number' !== typeof options.firstChunkSize) {
-		throw new Error('FirstChunkStream constructor requires options.firstChunkSize to be a number.');
+	if ('number' !== typeof options.chunkLength) {
+		throw new Error('FirstChunkStream constructor requires options.chunkLength to be a number.');
 	}
 
 	if (options.objectMode) {
@@ -45,7 +45,7 @@ function FirstChunkStream(options, cb) {
 	};
 	this.on('error', errorHandler);
 
-	if (1 > options.firstChunkSize) {
+	if (1 > options.chunkLength) {
 		this.__firstChunkSent = true;
 	} else {
 		this.__firstChunkSent = false;
@@ -58,13 +58,13 @@ function FirstChunkStream(options, cb) {
 		if(_this.__firstChunkSent) {
       manager.programPush(chunk, encoding, done);
 		} else {
-			if(chunk.length < options.firstChunkSize - _this.__firstChunkBufferSize) {
+			if(chunk.length < options.chunkLength - _this.__firstChunkBufferSize) {
 				_this.__firstChunkBuffer.push(chunk);
 				_this.__firstChunkBufferSize += chunk.length;
 				done();
 			} else {
-				_this.__firstChunkBuffer.push(chunk.slice(0, options.firstChunkSize - _this.__firstChunkBufferSize));
-				chunk = chunk.slice(options.firstChunkSize - _this.__firstChunkBufferSize);
+				_this.__firstChunkBuffer.push(chunk.slice(0, options.chunkLength - _this.__firstChunkBufferSize));
+				chunk = chunk.slice(options.chunkLength - _this.__firstChunkBufferSize);
 				_this.__firstChunkBufferSize += _this.__firstChunkBuffer[_this.__firstChunkBuffer.length - 1].length;
 				cb(null, Buffer.concat(_this.__firstChunkBuffer), encoding, function(err, buf) {
 					_this.removeListener('error', errorHandler);
