@@ -23,6 +23,9 @@ fs.createReadStream('unicorn.txt')
 		cb();
 	}))
 	.pipe(concatStream(function (data) {
+		if(data.length < 7) {
+			console.log('Couldn\'t get the minimum required first chunk length.');
+		}
 		console.log(data);
 		//=> UNICORN rainbow
 	}));
@@ -54,6 +57,10 @@ The options object is also passed to the `Duplex` stream constructor allowing
 Type: `function`
 
 The function that gets the required `options.chunkLength` bytes.
+
+Note that the buffer have a smaller length than the required one. In that case,
+ it will be due to the fact the overwhole stream content has a length inferior
+ than the `òptions.chunkLength` value.
 
 ## License
 

@@ -80,7 +80,14 @@ function FirstChunkStream(options, cb) {
 
   this.on('finish', function firstChunkStreamFinish() {
 		if(!_this.__firstChunkSent) {
-			cb(new Error('Couldn\'t get the firstChunk!'), Buffer.concat(_this.__firstChunkBuffer));
+			return cb(null, Buffer.concat(_this.__firstChunkBuffer), {}.undef, function(err, buf) {
+				_this.removeListener('error', errorHandler);
+				_this.__firstChunkSent = true;
+				if(buf.length) {
+					manager.programPush(buf, {}.undef, function() {});
+				}
+		    manager.programPush(null, {}.undef, function() {});
+			});
 		}
     manager.programPush(null, {}.undef, function() {});
   });

@@ -201,6 +201,32 @@ describe('firstChunk()', function () {
 
 			});
 
+			describe('and insufficient content', function () {
+
+				it('should work', function (done) {
+					var callbackCalled = false;
+
+					streamtest[version].fromChunks(['a', 'b', 'c'])
+						.pipe(firstChunkStream({chunkLength: 7}, function (err, chunk, enc, cb) {
+							if(err) {
+								return done(err);
+							}
+							assert.equal(chunk.toString('utf-8'), 'abc');
+							callbackCalled = true;
+							cb(null, new Buffer('b'));
+						}))
+						.pipe(streamtest[version].toText(function (err, text) {
+							if(err) {
+								return done(err);
+							}
+							assert.deepEqual(text, 'b');
+							assert(callbackCalled, 'Callback has been called.');
+							done();
+						}));
+				});
+
+			});
+
 			describe('and changing content', function () {
 
 				it('should work when removing the first chunk', function (done) {
