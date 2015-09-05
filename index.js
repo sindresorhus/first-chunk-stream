@@ -55,8 +55,9 @@ function FirstChunkStream(options, cb) {
 	this.__firstChunkBufferSize = 0;
 
 	this._write = function firstChunkStreamWrite(chunk, encoding, done) {
-		if(_this.__firstChunkSent) {
-      manager.programPush(chunk, encoding, done);
+	  this.__firstChunkEncoding = encoding;
+		if(this.__firstChunkSent) {
+      manager.programPush(chunk, this.__firstChunkEncoding, done);
 		} else {
 			if(chunk.length < options.chunkLength - _this.__firstChunkBufferSize) {
 				_this.__firstChunkBuffer.push(chunk);
@@ -66,30 +67,31 @@ function FirstChunkStream(options, cb) {
 				_this.__firstChunkBuffer.push(chunk.slice(0, options.chunkLength - _this.__firstChunkBufferSize));
 				chunk = chunk.slice(options.chunkLength - _this.__firstChunkBufferSize);
 				_this.__firstChunkBufferSize += _this.__firstChunkBuffer[_this.__firstChunkBuffer.length - 1].length;
-				cb(null, Buffer.concat(_this.__firstChunkBuffer), encoding, function(err, buf) {
+				cb(null, Buffer.concat(_this.__firstChunkBuffer), _this.__firstChunkEncoding, function(err, buf) {
 					_this.removeListener('error', errorHandler);
 					_this.__firstChunkSent = true;
 					if(!(buf.length || chunk.length)) {
 						return done();
 					}
-					manager.programPush(Buffer.concat([buf, chunk]), encoding, done);
+					manager.programPush(Buffer.concat([buf, chunk]), _this.__firstChunkEncoding, done);
 				});
 			}
 		}
 	};
 
   this.on('finish', function firstChunkStreamFinish() {
+		var _this = this;
 		if(!_this.__firstChunkSent) {
-			return cb(null, Buffer.concat(_this.__firstChunkBuffer), {}.undef, function(err, buf) {
+			return cb(null, Buffer.concat(_this.__firstChunkBuffer), this.__firstChunkEncoding, function(err, buf) {
 				_this.removeListener('error', errorHandler);
 				_this.__firstChunkSent = true;
 				if(buf.length) {
-					manager.programPush(buf, {}.undef, function() {});
+					manager.programPush(buf, _this.__firstChunkEncoding, function() {});
 				}
-		    manager.programPush(null, {}.undef, function() {});
+		    manager.programPush(null, _this.__firstChunkEncoding, function() {});
 			});
 		}
-    manager.programPush(null, {}.undef, function() {});
+    manager.programPush(null, this.__firstChunkEncoding, function() {});
   });
 }
 
