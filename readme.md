@@ -8,7 +8,6 @@
 $ npm install --save first-chunk-stream
 ```
 
-
 ## Usage
 
 ```js
@@ -31,6 +30,8 @@ fs.createReadStream('unicorn.txt')
 	}));
 ```
 
+Note this is your responsibility to check if the given first chunk isn't too
+ small than expected.
 
 ## API
 
@@ -58,9 +59,9 @@ Type: `function`
 
 The function that gets the required `options.chunkLength` bytes.
 
-Note that the buffer have a smaller length than the required one. In that case,
- it will be due to the fact the overwhole stream content has a length inferior
- than the `òptions.chunkLength` value.
+Note that the buffer can have a smaller length than the required one. In that
+ case, it will be due to the fact that the overwhole stream content has a length
+ inferior than the `òptions.chunkLength` value.
 
 ## License
 

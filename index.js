@@ -5,8 +5,11 @@ var Duplex = require('stream').Duplex;
 
 function FirstChunkStream(options, cb) {
 	var _this = this;
-	var manager;
-	var errorHandler;
+	var _state = {
+		sent: false,
+		chunks: [],
+		size: 0,
+	};
 
 	if (!(this instanceof FirstChunkStream)) {
 		return new FirstChunkStream(options, cb);
@@ -28,52 +31,69 @@ function FirstChunkStream(options, cb) {
 
 	Duplex.call(this, options);
 
-	manager = createReadStreamBackpressureManager(this);
-	errorHandler = function firstChunkStreamErrorHandler(err) {
-		setImmediate(function() {
-			_this.removeListener('error', errorHandler);
-		});
-		this.__firstChunkSent = true;
-		cb(err, Buffer.concat(_this.__firstChunkBuffer), {}.undef, function (err, buf) {
+	// Initialize the internal state
+	if (1 > options.chunkLength) {
+		_state.sent = true;
+	} else {
+		_state.sent = false;
+	}
+	_state.chunks = [];
+	_state.size = 0;
+	_state.manager = createReadStreamBackpressureManager(this);
+
+	// Errors management
+	// We need to execute the callback or emit en error dependending on the fact
+	// the firstChunk is sent or not
+	_state.errorHandler = function firstChunkStreamErrorHandler(err) {
+		processCallback(err, Buffer.concat(_state.chunks, _state.size), _state.encoding,  function() {});
+	};
+	this.on('error', _state.errorHandler);
+
+	// Callback management
+	function processCallback(err, buf, encoding, done) {
+		// When doing sync writes + emiting an errror it can happen that
+		// Remove the error listener on the next tick if an error where fired
+		// to avoid unwanted error throwing
+		if(err) {
+			setImmediate(function() {
+				_this.removeListener('error', _state.errorHandler);
+			});
+		} else {
+			_this.removeListener('error', _state.errorHandler);
+		}
+		_state.sent = true;
+		cb(err, buf, encoding, function (err, buf, encoding, cb) {
 			if(err) {
 				setImmediate(function() {
 					return _this.emit('error', err);
 				});
 			}
-			manager.programPush(buf, {}.undef, function() {});
+			if(!buf) {
+				return done();
+		  }
+			_state.manager.programPush(buf, encoding, done);
 		});
-	};
-	this.on('error', errorHandler);
-
-	if (1 > options.chunkLength) {
-		this.__firstChunkSent = true;
-	} else {
-		this.__firstChunkSent = false;
 	}
 
-	this.__firstChunkBuffer = [];
-	this.__firstChunkBufferSize = 0;
-
+	// Writes management
 	this._write = function firstChunkStreamWrite(chunk, encoding, done) {
-	  this.__firstChunkEncoding = encoding;
-		if(this.__firstChunkSent) {
-      manager.programPush(chunk, this.__firstChunkEncoding, done);
+	  _state.encoding = encoding;
+		if(_state.sent) {
+      _state.manager.programPush(chunk, _state.encoding, done);
 		} else {
-			if(chunk.length < options.chunkLength - _this.__firstChunkBufferSize) {
-				_this.__firstChunkBuffer.push(chunk);
-				_this.__firstChunkBufferSize += chunk.length;
+			if(chunk.length < options.chunkLength - _state.size) {
+				_state.chunks.push(chunk);
+				_state.size += chunk.length;
 				done();
 			} else {
-				_this.__firstChunkBuffer.push(chunk.slice(0, options.chunkLength - _this.__firstChunkBufferSize));
-				chunk = chunk.slice(options.chunkLength - _this.__firstChunkBufferSize);
-				_this.__firstChunkBufferSize += _this.__firstChunkBuffer[_this.__firstChunkBuffer.length - 1].length;
-				cb(null, Buffer.concat(_this.__firstChunkBuffer), _this.__firstChunkEncoding, function(err, buf) {
-					_this.removeListener('error', errorHandler);
-					_this.__firstChunkSent = true;
-					if(!(buf.length || chunk.length)) {
+				_state.chunks.push(chunk.slice(0, options.chunkLength - _state.size));
+				chunk = chunk.slice(options.chunkLength - _state.size);
+				_state.size += _state.chunks[_state.chunks.length - 1].length;
+				processCallback(null, Buffer.concat(_state.chunks, _state.size), _state.encoding, function() {
+					if(!chunk.length) {
 						return done();
 					}
-					manager.programPush(Buffer.concat([buf, chunk]), _this.__firstChunkEncoding, done);
+					_state.manager.programPush(chunk, _state.encoding, done);
 				});
 			}
 		}
@@ -81,17 +101,12 @@ function FirstChunkStream(options, cb) {
 
   this.on('finish', function firstChunkStreamFinish() {
 		var _this = this;
-		if(!_this.__firstChunkSent) {
-			return cb(null, Buffer.concat(_this.__firstChunkBuffer), this.__firstChunkEncoding, function(err, buf) {
-				_this.removeListener('error', errorHandler);
-				_this.__firstChunkSent = true;
-				if(buf.length) {
-					manager.programPush(buf, _this.__firstChunkEncoding, function() {});
-				}
-		    manager.programPush(null, _this.__firstChunkEncoding, function() {});
+		if(!_state.sent) {
+			return processCallback(null, Buffer.concat(_state.chunks, _state.size), _state.encoding, function() {
+				_state.manager.programPush(null, _state.encoding);
 			});
 		}
-    manager.programPush(null, this.__firstChunkEncoding, function() {});
+    _state.manager.programPush(null, _state.encoding);
   });
 }
 
@@ -103,6 +118,7 @@ function createReadStreamBackpressureManager(readableStream) {
     waitPush: true,
     programmedPushs: [],
     programPush: function programPush(chunk, encoding, done) {
+			done = done || function() {};
       // Store the current write
       manager.programmedPushs.push([chunk, encoding, done]);
       // Need to be async to avoid nested push attempts
