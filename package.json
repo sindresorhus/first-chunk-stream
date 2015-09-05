@@ -13,7 +13,8 @@
     "node": ">=0.10.0"
   },
   "scripts": {
-    "test": "mocha"
+    "test": "mocha",
+    "cover": "istanbul cover --report html _mocha -- test.js -R spec -t 5000"
   },
   "files": [
     "index.js"
@@ -30,7 +31,9 @@
     "minimum"
   ],
   "devDependencies": {
+    "istanbul": "^0.3.19",
     "mocha": "*",
+    "mocha-lcov-reporter": "0.0.2",
     "streamtest": "^1.2.1"
   }
 }
