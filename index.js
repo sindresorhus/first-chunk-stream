@@ -32,13 +32,6 @@ function FirstChunkStream(options, cb) {
 	Duplex.call(this, options);
 
 	// Initialize the internal state
-	if (1 > options.chunkLength) {
-		_state.sent = true;
-	} else {
-		_state.sent = false;
-	}
-	_state.chunks = [];
-	_state.size = 0;
 	_state.manager = createReadStreamBackpressureManager(this);
 
 	// Errors management

@@ -130,6 +130,32 @@ describe('firstChunk()', function () {
 
 			});
 
+			describe('and require a 0 length first chunk', function () {
+
+				it('should work', function (done) {
+					var callbackCalled = false;
+
+					streamtest[version].fromChunks([content])
+						.pipe(firstChunkStream({chunkLength: 0}, function (err, chunk, enc, cb) {
+							if(err) {
+								return done(err);
+							}
+							assert.equal(chunk.toString('utf-8'), '');
+							callbackCalled = true;
+							cb(null, new Buffer('popop'));
+						}))
+						.pipe(streamtest[version].toText(function (err, text) {
+							if(err) {
+								return done(err);
+							}
+							assert.deepEqual(text, 'popop' + content);
+							assert(callbackCalled, 'Callback has been called.');
+							done();
+						}));
+				});
+
+			});
+
 			describe('and leaving content as is', function () {
 
 				it('should work for a single oversized chunk', function (done) {
