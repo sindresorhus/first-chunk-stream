@@ -2,11 +2,13 @@
 
 > Buffer and transform the n first bytes of a stream
 
+
 ## Install
 
 ```
 $ npm install --save first-chunk-stream
 ```
+
 
 ## Usage
 
@@ -22,16 +24,16 @@ fs.createReadStream('unicorn.txt')
 		cb();
 	}))
 	.pipe(concatStream(function (data) {
-		if(data.length < 7) {
+		if (data.length < 7) {
 			console.log('Couldn\'t get the minimum required first chunk length.');
 		}
+
 		console.log(data);
 		//=> UNICORN rainbow
 	}));
 ```
 
-Note this is your responsibility to check if the given first chunk isn't too
- small than expected.
+Note this is your responsibility to check if the given first chunk isn't too small than expected.
 
 ## API
 

@@ -7,13 +7,13 @@
   "author": {
     "name": "Sindre Sorhus",
     "email": "sindresorhus@gmail.com",
-    "url": "http://sindresorhus.com"
+    "url": "sindresorhus.com"
   },
   "engines": {
     "node": ">=0.10.0"
   },
   "scripts": {
-    "test": "mocha",
+    "test": "xo && mocha",
     "cover": "istanbul cover --report html _mocha -- test.js -R spec -t 5000"
   },
   "files": [
@@ -34,6 +34,7 @@
     "istanbul": "^0.3.19",
     "mocha": "*",
     "mocha-lcov-reporter": "0.0.2",
-    "streamtest": "^1.2.1"
+    "streamtest": "^1.2.1",
+    "xo": "*"
   }
 }
