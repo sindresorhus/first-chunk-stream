@@ -1,6 +1,6 @@
 'use strict';
 var util = require('util');
-var Duplex = require('stream').Duplex;
+var Duplex = require('readable-stream').Duplex;
 
 function FirstChunkStream(options, cb) {
 	var _this = this;

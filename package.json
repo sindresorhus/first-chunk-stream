@@ -30,6 +30,9 @@
     "min",
     "minimum"
   ],
+  "dependencies": {
+    "readable-stream": "^2.0.2"
+  },
   "devDependencies": {
     "istanbul": "^0.3.19",
     "mocha": "*",
