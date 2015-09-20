@@ -1,18 +1,12 @@
 # first-chunk-stream [![Build Status](https://travis-ci.org/sindresorhus/first-chunk-stream.svg?branch=master)](https://travis-ci.org/sindresorhus/first-chunk-stream)
 
-> Transform the first chunk in a stream
-
-Useful if you want to do something to the first chunk.
-
-You can also set the minimum size of that chunk.
-
+> Buffer and transform the n first bytes of a stream
 
 ## Install
 
 ```
 $ npm install --save first-chunk-stream
 ```
-
 
 ## Usage
 
@@ -22,40 +16,52 @@ var concatStream = require('concat-stream');
 var firstChunkStream = require('first-chunk-stream');
 
 // unicorn.txt => unicorn rainbow
-// `highWaterMark: 1` means it will only read 1 byte at the time
-fs.createReadStream('unicorn.txt', {highWaterMark: 1})
-	.pipe(firstChunkStream({minSize: 7}, function (chunk, enc, cb) {
+fs.createReadStream('unicorn.txt')
+	.pipe(firstChunkStream({chunkLength: 7}, function (chunk, enc, cb) {
 		this.push(chunk.toUpperCase());
 		cb();
 	}))
 	.pipe(concatStream(function (data) {
+		if(data.length < 7) {
+			console.log('Couldn\'t get the minimum required first chunk length.');
+		}
 		console.log(data);
 		//=> UNICORN rainbow
 	}));
 ```
 
+Note this is your responsibility to check if the given first chunk isn't too
+ small than expected.
 
 ## API
 
-### firstChunkStream([options], transform)
+### firstChunkStream(options, transform)
 
-#### options.minSize
+Returns a `FirstChunkStream` instance.
+
+#### options
+
+##### options.chunkLength
 
 Type: `number`
 
-The minimum size of the first chunk.
+How many bytes you want to buffer.
 
-#### transform(chunk, encoding, callback)
+##### options.*
+
+The options object is also passed to the `Duplex` stream constructor allowing
+ you to customize your stream behavior.
+
+#### transform(err, chunk, encoding, callback)
 
 *Required*  
 Type: `function`
 
-The [function](http://nodejs.org/docs/latest/api/stream.html#stream_transform_transform_chunk_encoding_callback) that gets the first chunk.
+The function that gets the required `options.chunkLength` bytes.
 
-### firstChunkStream.ctor()
-
-Instead of returning a [stream.Transform](http://nodejs.org/docs/latest/api/stream.html#stream_class_stream_transform_1) instance, `firstChunk.ctor()` returns a constructor for a custom Transform. This is useful when you want to use the same transform logic in multiple instances.
-
+Note that the buffer can have a smaller length than the required one. In that
+ case, it will be due to the fact that the overwhole stream content has a length
+ inferior than the `òptions.chunkLength` value.
 
 ## License
 
