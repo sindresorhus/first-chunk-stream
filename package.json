@@ -1,6 +1,6 @@
 {
   "name": "first-chunk-stream",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Transform the first chunk in a stream",
   "license": "MIT",
   "repository": "sindresorhus/first-chunk-stream",
