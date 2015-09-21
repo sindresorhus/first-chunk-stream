@@ -251,6 +251,37 @@ describe('firstChunk()', function () {
 							done();
 						}));
 				});
+
+				it('should work even when consuming the stream in the callback', function (done) {
+					var callbackCalled = false;
+					var inputStream = streamtest[version].fromChunks(content.split(''));
+					var fCStream;
+
+					fCStream = inputStream
+						.pipe(firstChunkStream({chunkLength: 7}, function (err, chunk, enc, cb) {
+							if (err) {
+								done(err);
+								return;
+							}
+
+							assert.equal(chunk.toString('utf-8'), content.substr(0, 7));
+							callbackCalled = true;
+
+							fCStream.pipe(streamtest[version].toText(function (err, text) {
+								if (err) {
+									done(err);
+									return;
+								}
+
+								assert.deepEqual(text, content);
+								assert(callbackCalled, 'Callback has been called.');
+
+								done();
+							}));
+
+							cb(null, chunk);
+						}));
+				});
 			});
 
 			describe('and insufficient content', function () {
