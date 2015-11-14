@@ -34,9 +34,9 @@
     "readable-stream": "^2.0.2"
   },
   "devDependencies": {
-    "istanbul": "^0.3.19",
+    "istanbul": "^0.4.0",
     "mocha": "*",
-    "mocha-lcov-reporter": "0.0.2",
+    "mocha-lcov-reporter": "^1.0.0",
     "streamtest": "^1.2.1",
     "xo": "*"
   }

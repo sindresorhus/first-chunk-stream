@@ -32,7 +32,7 @@ describe('firstChunk()', function () {
 				}, function () {});
 			});
 			assert.throws(function () {
-				firstChunkStream({}.undef, function () {});
+				firstChunkStream({}, function () {});
 			});
 		});
 	});
