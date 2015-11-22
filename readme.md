@@ -19,9 +19,11 @@ const firstChunkStream = require('first-chunk-stream');
 
 // unicorn.txt => unicorn rainbow
 fs.createReadStream('unicorn.txt')
-	.pipe(firstChunkStream({chunkLength: 7}, function (chunk, enc, cb) {
-		this.push(chunk.toUpperCase());
-		cb();
+	.pipe(firstChunkStream({chunkLength: 7}, function (err, chunk, enc, cb) {
+		if (err) {
+			return cb(err);
+		}
+		cb(null, chunk.toUpperCase());
 	}))
 	.pipe(concatStream(function (data) {
 		if (data.length < 7) {
@@ -50,7 +52,7 @@ Type: `number`
 
 How many bytes you want to buffer.
 
-#### transform(chunk, encoding, callback)
+#### transform(err, chunk, encoding, callback)
 
 Type: `function`
 
