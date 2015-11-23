@@ -14,25 +14,28 @@ $ npm install --save first-chunk-stream
 
 ```js
 const fs = require('fs');
-const concatStream = require('concat-stream');
+const getStream = require('get-stream');
 const firstChunkStream = require('first-chunk-stream');
 
 // unicorn.txt => unicorn rainbow
-fs.createReadStream('unicorn.txt')
-	.pipe(firstChunkStream({chunkLength: 7}, function (err, chunk, enc, cb) {
+const stream = fs.createReadStream('unicorn.txt')
+	.pipe(firstChunkStream({chunkLength: 7}, (err, chunk, enc, cb) => {
 		if (err) {
-			return cb(err);
-		}
-		cb(null, chunk.toUpperCase());
-	}))
-	.pipe(concatStream(function (data) {
-		if (data.length < 7) {
-			throw new Error('Couldn\'t get the minimum required first chunk length');
+			cb(err);
+			return;
 		}
 
-		console.log(data);
-		//=> 'UNICORN rainbow'
+		cb(null, chunk.toUpperCase());
 	}));
+
+getStream(stream).then(data => {
+	if (data.length < 7) {
+		throw new Error(`Couldn't get the minimum required first chunk length`);
+	}
+
+	console.log(data);
+	//=> 'UNICORN rainbow'
+});
 ```
 
 
@@ -58,7 +61,7 @@ Type: `function`
 
 The function that gets the required `options.chunkLength` bytes.
 
-Note that the buffer can have a smaller length than the required one. In that case, it will be due to the fact that the complete stream contents has a length less than the `òptions.chunkLength` value. You should check for this yourself if you strictly depend on the length.
+Note that the buffer can have a smaller length than the required one. In that case, it will be due to the fact that the complete stream contents has a length less than the `options.chunkLength` value. You should check for this yourself if you strictly depend on the length.
 
 
 ## License
