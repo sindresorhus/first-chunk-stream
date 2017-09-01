@@ -44,7 +44,7 @@ function FirstChunkStream(options, cb) {
 
 	// Callback management
 	function processCallback(err, buf, encoding, done) {
-		// When doing sync writes + emiting an errror it can happen that
+		// When doing sync writes + emitting an errror it can happen that
 		// Remove the error listener on the next tick if an error where fired
 		// to avoid unwanted error throwing
 		if (err) {
