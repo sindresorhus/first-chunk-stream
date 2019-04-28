@@ -6,7 +6,7 @@
 ## Install
 
 ```
-$ npm install --save first-chunk-stream
+$ npm install first-chunk-stream
 ```
 
 
@@ -15,53 +15,57 @@ $ npm install --save first-chunk-stream
 ```js
 const fs = require('fs');
 const getStream = require('get-stream');
-const firstChunkStream = require('first-chunk-stream');
+const FirstChunkStream = require('first-chunk-stream');
 
 // unicorn.txt => unicorn rainbow
 const stream = fs.createReadStream('unicorn.txt')
-	.pipe(firstChunkStream({chunkLength: 7}, (err, chunk, enc, cb) => {
-		if (err) {
-			cb(err);
+	.pipe(new FirstChunkStream({chunkLength: 7}, (error, chunk, encoding, callback) => {
+		if (error) {
+			callback(error);
 			return;
 		}
 
-		cb(null, chunk.toUpperCase());
+		callback(null, chunk.toString(encoding).toUpperCase());
 	}));
 
-getStream(stream).then(data => {
+(async () => {
+	const data = await getStream(stream);
+
 	if (data.length < 7) {
-		throw new Error(`Couldn't get the minimum required first chunk length`);
+		throw new Error('Couldn\'t get the minimum required first chunk length');
 	}
 
 	console.log(data);
 	//=> 'UNICORN rainbow'
-});
+})();
 ```
 
 
 ## API
 
-### firstChunkStream([options], transform)
+### firstChunkStream(options, transform)
 
 Returns a `FirstChunkStream` instance.
 
-#### options
+#### transform(error, chunk, encoding, callback)
 
-The options object is passed to the [`Duplex` stream](https://nodejs.org/api/stream.html#stream_class_stream_duplex) constructor allowing you to customize your stream behavior. In addition you can specify the following option:
-
-##### chunkLength
-
-Type: `number`
-
-How many bytes you want to buffer.
-
-#### transform(err, chunk, encoding, callback)
-
-Type: `function`
+Type: `Function`
 
 The function that gets the required `options.chunkLength` bytes.
 
 Note that the buffer can have a smaller length than the required one. In that case, it will be due to the fact that the complete stream contents has a length less than the `options.chunkLength` value. You should check for this yourself if you strictly depend on the length.
+
+#### options
+
+Type: `object`
+
+The options object is passed to the [`Duplex` stream](https://nodejs.org/api/stream.html#stream_class_stream_duplex) constructor allowing you to customize your stream behavior. In addition you can specify the following option:
+
+###### chunkLength
+
+Type: `number`
+
+How many bytes you want to buffer.
 
 
 ## License
