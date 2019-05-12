@@ -1,404 +1,451 @@
-/* eslint-env mocha */
-'use strict';
-var assert = require('assert');
-var streamtest = require('streamtest');
-var firstChunkStream = require('./');
+import test from 'ava';
+import streamtest from 'streamtest';
+import FirstChunkStream from '.';
 
-describe('firstChunk()', function () {
-	var content = 'unicorn rainbows \ncake';
+const content = 'unicorn rainbows \ncake';
 
-	describe('should fail', function () {
-		it('when the callback is not providen', function () {
-			assert.throws(function () {
-				firstChunkStream({
-					chunkLength: 7
-				});
-			});
-		});
+test('fails when the callback is not provided', t => {
+	t.throws(() => new FirstChunkStream({chunkLength: 7}));
+});
 
-		it('when trying to use it in objectMode', function () {
-			assert.throws(function () {
-				firstChunkStream({
-					chunkLength: 7,
-					objectMode: true
-				}, function () {});
-			});
-		});
+test('fails when trying to use it in objectMode', t => {
+	t.throws(
+		() => new FirstChunkStream({chunkLength: 7, objectMode: true}, () => {})
+	);
+});
 
-		it('when firstChunk size is bad or missing', function () {
-			assert.throws(function () {
-				firstChunkStream({
-					chunkLength: 'feferf'
-				}, function () {});
+test('fails when firstChunk size is bad or missing', t => {
+	t.throws(() => new FirstChunkStream({chunkLength: 'feferf'}, () => {}));
+	t.throws(() => new FirstChunkStream({}, () => {}));
+});
+
+streamtest.versions.forEach(version => {
+	test.cb(
+		`for ${version} streams, emitting errors reports error in the callback before first chunk is sent and allows recovery`,
+		t => {
+			t.plan(3);
+
+			const stream = new FirstChunkStream(
+				{chunkLength: 7},
+				(error, chunk, encoding, callback) => {
+					t.is(error.message, 'Hey!');
+					t.is(chunk.toString('utf-8'), content.substr(0, 2));
+
+					callback(null, Buffer.from(content.substr(0, 7)));
+				}
+			);
+
+			stream.pipe(
+				streamtest[version].toText((error, text) => {
+					if (error) {
+						t.end(error);
+						return;
+					}
+
+					t.is(text, content);
+					t.end();
+				})
+			);
+
+			stream.write(Buffer.from(content[0]));
+			stream.write(Buffer.from(content[1]));
+			stream.emit('error', new Error('Hey!'));
+			stream.write(Buffer.from(content.substr(7)));
+			stream.end();
+		}
+	);
+
+	test.cb(
+		`for ${version} streams, emitting errors reports error in the callback before first chunk is sent and reemits passed errors`,
+		t => {
+			t.plan(3);
+
+			const stream = new FirstChunkStream(
+				{chunkLength: 7},
+				(error, chunk, encoding, callback) => {
+					t.is(error.message, 'Hey!');
+
+					stream.on('error', error => {
+						t.is(error.message, 'Ho!');
+					});
+
+					callback(new Error('Ho!'));
+				}
+			);
+
+			stream.pipe(
+				streamtest[version].toText((error, text) => {
+					if (error) {
+						t.end(error);
+						return;
+					}
+
+					t.is(text, content.substr(7));
+					t.end();
+				})
+			);
+
+			stream.write(Buffer.from(content[0]));
+			stream.write(Buffer.from(content[1]));
+			stream.emit('error', new Error('Hey!'));
+			stream.write(Buffer.from(content.substr(7)));
+			stream.end();
+		}
+	);
+
+	test.cb(
+		`for ${version} streams, emitting errors just emits errors when first chunk is sent`,
+		t => {
+			t.plan(3);
+
+			const stream = new FirstChunkStream(
+				{chunkLength: 7},
+				(error, chunk, encoding, callback) => {
+					t.pass();
+
+					callback(null, chunk);
+				}
+			);
+
+			stream.on('error', error => {
+				t.is(error.message, 'Hey!');
 			});
-			assert.throws(function () {
-				firstChunkStream({}, function () {});
-			});
-		});
+
+			stream.pipe(
+				streamtest[version].toText((error, text) => {
+					if (error) {
+						t.end(error);
+						return;
+					}
+
+					t.is(text, content);
+					t.end();
+				})
+			);
+
+			stream.write(Buffer.from(content.substr(0, 7)));
+			stream.emit('error', new Error('Hey!'));
+			stream.write(Buffer.from(content.substr(7)));
+			stream.end();
+		}
+	);
+
+	test.cb(`for ${version} streams, requires a 0 length first chunk`, t => {
+		t.plan(2);
+
+		streamtest[version]
+			.fromChunks([content])
+			.pipe(
+				new FirstChunkStream(
+					{chunkLength: 0},
+					(error, chunk, encoding, callback) => {
+						if (error) {
+							t.end(error);
+							return;
+						}
+
+						t.is(chunk.toString('utf-8'), '');
+
+						callback(null, Buffer.from('popop'));
+					}
+				)
+			)
+			.pipe(
+				streamtest[version].toText((error, text) => {
+					if (error) {
+						t.end(error);
+						return;
+					}
+
+					t.is(text, 'popop' + content);
+					t.end();
+				})
+			);
 	});
 
-	streamtest.versions.forEach(function (version) {
-		describe('for ' + version + ' streams', function () {
-			describe('emitting errors', function () {
-				it('should report error in the callback before first chunk is sent and allow recovery', function (done) {
-					var callbackCalled = false;
-					var stream = firstChunkStream({chunkLength: 7}, function (err, chunk, enc, cb) {
-						assert.equal(err.message, 'Hey!');
-						assert.equal(chunk.toString('utf-8'), content.substr(0, 2));
-						callbackCalled = true;
+	test.cb(
+		`for ${version} streams, leaves content as is with a single oversized chunk`,
+		t => {
+			t.plan(2);
 
-						cb(null, new Buffer(content.substr(0, 7)));
-					});
+			streamtest[version]
+				.fromChunks([content])
+				.pipe(
+					new FirstChunkStream(
+						{chunkLength: 7},
+						(error, chunk, encoding, callback) => {
+							if (error) {
+								t.end(error);
+								return;
+							}
 
-					stream.pipe(streamtest[version].toText(function (err, text) {
-						if (err) {
-							done(err);
+							t.is(chunk.toString('utf-8'), content.substr(0, 7));
+
+							callback(null, chunk);
+						}
+					)
+				)
+				.pipe(
+					streamtest[version].toText((error, text) => {
+						if (error) {
+							t.end(error);
 							return;
 						}
 
-						assert.deepEqual(text, content);
-						assert(callbackCalled, 'Callback has been called.');
+						t.is(text, content);
+						t.end();
+					})
+				);
+		}
+	);
 
-						done();
-					}));
+	test.cb(
+		`for ${version} streams, leaves content as is with required size chunk`,
+		t => {
+			t.plan(2);
 
-					stream.write(new Buffer(content[0]));
-					stream.write(new Buffer(content[1]));
-					stream.emit('error', new Error('Hey!'));
-					stream.write(new Buffer(content.substr(7)));
-					stream.end();
-				});
+			streamtest[version]
+				.fromChunks([content.substr(0, 7), content.substr(7)])
+				.pipe(
+					new FirstChunkStream(
+						{chunkLength: 7},
+						(error, chunk, encoding, callback) => {
+							if (error) {
+								t.end(error);
+								return;
+							}
 
-				it('should report error in the callback before first chunk is sent and reemit passed errors', function (done) {
-					var callbackCalled = false;
-					var errEmitted = false;
-					var stream = firstChunkStream({chunkLength: 7}, function (err, chunk, enc, cb) {
-						assert.equal(err.message, 'Hey!');
-						callbackCalled = true;
+							t.is(chunk.toString('utf-8'), content.substr(0, 7));
 
-						stream.on('error', function (err) {
-							assert.equal(err.message, 'Ho!');
-							errEmitted = true;
-						});
-
-						cb(new Error('Ho!'));
-					});
-
-					stream.pipe(streamtest[version].toText(function (err, text) {
-						if (err) {
-							done(err);
+							callback(null, chunk);
+						}
+					)
+				)
+				.pipe(
+					streamtest[version].toText((error, text) => {
+						if (error) {
+							t.end(error);
 							return;
 						}
 
-						assert.deepEqual(text, content.substr(7));
-						assert(callbackCalled, 'Callback has been called.');
-						assert(errEmitted, 'Error has been emitted.');
+						t.is(text, content);
+						t.end();
+					})
+				);
+		}
+	);
 
-						done();
-					}));
+	test.cb(
+		`for ${version} streams, leaves content as is with several small chunks`,
+		t => {
+			t.plan(2);
 
-					stream.write(new Buffer(content[0]));
-					stream.write(new Buffer(content[1]));
-					stream.emit('error', new Error('Hey!'));
-					stream.write(new Buffer(content.substr(7)));
-					stream.end();
-				});
+			streamtest[version]
+				.fromChunks(content.split(''))
+				.pipe(
+					new FirstChunkStream(
+						{chunkLength: 7},
+						(error, chunk, encoding, callback) => {
+							if (error) {
+								t.end(error);
+								return;
+							}
 
-				it('should just emit errors when first chunk is sent', function (done) {
-					var callbackCalled = false;
-					var errEmitted = false;
-					var stream = firstChunkStream({chunkLength: 7}, function (err, chunk, enc, cb) {
-						callbackCalled = true;
-						cb(null, chunk);
-					});
+							t.is(chunk.toString('utf-8'), content.substr(0, 7));
 
-					stream.on('error', function (err) {
-						assert.equal(err.message, 'Hey!');
-						errEmitted = true;
-					});
-
-					stream.pipe(streamtest[version].toText(function (err, text) {
-						if (err) {
-							done(err);
+							callback(null, chunk);
+						}
+					)
+				)
+				.pipe(
+					streamtest[version].toText((error, text) => {
+						if (error) {
+							t.end(error);
 							return;
 						}
 
-						assert.deepEqual(text, content);
-						assert(callbackCalled, 'Callback has been called.');
-						assert(errEmitted, 'Error has been emitted.');
+						t.is(text, content);
+						t.end();
+					})
+				);
+		}
+	);
 
-						done();
-					}));
+	test.cb(
+		`for ${version} streams, leaves content as is even when consuming the stream in the callback`,
+		t => {
+			t.plan(2);
 
-					stream.write(new Buffer(content.substr(0, 7)));
-					stream.emit('error', new Error('Hey!'));
-					stream.write(new Buffer(content.substr(7)));
-					stream.end();
-				});
-			});
+			const inputStream = streamtest[version].fromChunks(content.split(''));
 
-			describe('and require a 0 length first chunk', function () {
-				it('should work', function (done) {
-					var callbackCalled = false;
+			const firstChunkStream = inputStream.pipe(
+				new FirstChunkStream(
+					{chunkLength: 7},
+					(error, chunk, encoding, callback) => {
+						if (error) {
+							t.end(error);
+							return;
+						}
 
-					streamtest[version].fromChunks([content])
-						.pipe(firstChunkStream({chunkLength: 0}, function (err, chunk, enc, cb) {
-							if (err) {
-								done(err);
-								return;
-							}
+						t.is(chunk.toString('utf-8'), content.substr(0, 7));
 
-							assert.equal(chunk.toString('utf-8'), '');
-							callbackCalled = true;
-
-							cb(null, new Buffer('popop'));
-						}))
-						.pipe(streamtest[version].toText(function (err, text) {
-							if (err) {
-								done(err);
-								return;
-							}
-
-							assert.deepEqual(text, 'popop' + content);
-							assert(callbackCalled, 'Callback has been called.');
-
-							done();
-						}));
-				});
-			});
-
-			describe('and leaving content as is', function () {
-				it('should work for a single oversized chunk', function (done) {
-					var callbackCalled = false;
-
-					streamtest[version].fromChunks([content])
-						.pipe(firstChunkStream({chunkLength: 7}, function (err, chunk, enc, cb) {
-							if (err) {
-								done(err);
-								return;
-							}
-
-							assert.equal(chunk.toString('utf-8'), content.substr(0, 7));
-							callbackCalled = true;
-
-							cb(null, chunk);
-						}))
-						.pipe(streamtest[version].toText(function (err, text) {
-							if (err) {
-								done(err);
-								return;
-							}
-
-							assert.deepEqual(text, content);
-							assert(callbackCalled, 'Callback has been called.');
-
-							done();
-						}));
-				});
-
-				it('should work for required size chunk', function (done) {
-					var callbackCalled = false;
-
-					streamtest[version].fromChunks([content.substr(0, 7), content.substr(7)])
-						.pipe(firstChunkStream({chunkLength: 7}, function (err, chunk, enc, cb) {
-							if (err) {
-								done(err);
-								return;
-							}
-
-							assert.equal(chunk.toString('utf-8'), content.substr(0, 7));
-							callbackCalled = true;
-
-							cb(null, chunk);
-						}))
-						.pipe(streamtest[version].toText(function (err, text) {
-							if (err) {
-								done(err);
-								return;
-							}
-
-							assert.deepEqual(text, content);
-							assert(callbackCalled, 'Callback has been called.');
-
-							done();
-						}));
-				});
-
-				it('should work for several small chunks', function (done) {
-					var callbackCalled = false;
-
-					streamtest[version].fromChunks(content.split(''))
-						.pipe(firstChunkStream({chunkLength: 7}, function (err, chunk, enc, cb) {
-							if (err) {
-								done(err);
-								return;
-							}
-
-							assert.equal(chunk.toString('utf-8'), content.substr(0, 7));
-							callbackCalled = true;
-
-							cb(null, chunk);
-						}))
-						.pipe(streamtest[version].toText(function (err, text) {
-							if (err) {
-								done(err);
-								return;
-							}
-
-							assert.deepEqual(text, content);
-							assert(callbackCalled, 'Callback has been called.');
-
-							done();
-						}));
-				});
-
-				it('should work even when consuming the stream in the callback', function (done) {
-					var callbackCalled = false;
-					var inputStream = streamtest[version].fromChunks(content.split(''));
-					var fCStream;
-
-					fCStream = inputStream
-						.pipe(firstChunkStream({chunkLength: 7}, function (err, chunk, enc, cb) {
-							if (err) {
-								done(err);
-								return;
-							}
-
-							assert.equal(chunk.toString('utf-8'), content.substr(0, 7));
-							callbackCalled = true;
-
-							fCStream.pipe(streamtest[version].toText(function (err, text) {
-								if (err) {
-									done(err);
+						firstChunkStream.pipe(
+							streamtest[version].toText((error, text) => {
+								if (error) {
+									t.end(error);
 									return;
 								}
 
-								assert.deepEqual(text, content);
-								assert(callbackCalled, 'Callback has been called.');
+								t.is(text, content);
+								t.end();
+							})
+						);
 
-								done();
-							}));
+						callback(null, chunk);
+					}
+				)
+			);
+		}
+	);
 
-							cb(null, chunk);
-						}));
-				});
-			});
+	test.cb(`for ${version} streams, works with insufficient content`, t => {
+		t.plan(2);
 
-			describe('and insufficient content', function () {
-				it('should work', function (done) {
-					var callbackCalled = false;
+		streamtest[version]
+			.fromChunks(['a', 'b', 'c'])
+			.pipe(
+				new FirstChunkStream(
+					{chunkLength: 7},
+					(error, chunk, encoding, callback) => {
+						if (error) {
+							t.end(error);
+							return;
+						}
 
-					streamtest[version].fromChunks(['a', 'b', 'c'])
-						.pipe(firstChunkStream({chunkLength: 7}, function (err, chunk, enc, cb) {
-							if (err) {
-								done(err);
-								return;
-							}
+						t.is(chunk.toString('utf-8'), 'abc');
 
-							assert.equal(chunk.toString('utf-8'), 'abc');
-							callbackCalled = true;
+						callback(null, Buffer.from('b'));
+					}
+				)
+			)
+			.pipe(
+				streamtest[version].toText((error, text) => {
+					if (error) {
+						t.end(error);
+						return;
+					}
 
-							cb(null, new Buffer('b'));
-						}))
-						.pipe(streamtest[version].toText(function (err, text) {
-							if (err) {
-								done(err);
-								return;
-							}
-
-							assert.deepEqual(text, 'b');
-							assert(callbackCalled, 'Callback has been called.');
-
-							done();
-						}));
-				});
-			});
-
-			describe('and changing content', function () {
-				it('should work when removing the first chunk', function (done) {
-					var callbackCalled = false;
-
-					streamtest[version].fromChunks([content])
-						.pipe(firstChunkStream({chunkLength: 7}, function (err, chunk, enc, cb) {
-							if (err) {
-								done(err);
-								return;
-							}
-
-							assert.equal(chunk.toString('utf-8'), content.substr(0, 7));
-							callbackCalled = true;
-
-							cb(null, new Buffer(0));
-						}))
-						.pipe(streamtest[version].toText(function (err, text) {
-							if (err) {
-								done(err);
-								return;
-							}
-
-							assert.deepEqual(text, content.substr(7));
-							assert(callbackCalled, 'Callback has been called.');
-
-							done();
-						}));
-				});
-
-				it('should work when replacing per a larger chunk', function (done) {
-					var callbackCalled = false;
-
-					streamtest[version].fromChunks([content.substr(0, 7), content.substr(7)])
-						.pipe(firstChunkStream({chunkLength: 7}, function (err, chunk, enc, cb) {
-							if (err) {
-								done(err);
-								return;
-							}
-
-							assert.equal(chunk.toString('utf-8'), content.substr(0, 7));
-							callbackCalled = true;
-
-							cb(null, Buffer.concat([chunk, new Buffer('plop')]));
-						}))
-						.pipe(streamtest[version].toText(function (err, text) {
-							if (err) {
-								done(err);
-								return;
-							}
-
-							assert.deepEqual(text, content.substr(0, 7) + 'plop' + content.substr(7));
-							assert(callbackCalled, 'Callback has been called.');
-
-							done();
-						}));
-				});
-
-				it('should work when replacing per a smaller chunk', function (done) {
-					var callbackCalled = false;
-
-					streamtest[version].fromChunks(content.split(''))
-						.pipe(firstChunkStream({chunkLength: 7}, function (err, chunk, enc, cb) {
-							if (err) {
-								done(err);
-								return;
-							}
-
-							assert.equal(chunk.toString('utf-8'), content.substr(0, 7));
-							callbackCalled = true;
-
-							cb(null, new Buffer('plop'));
-						}))
-						.pipe(streamtest[version].toText(function (err, text) {
-							if (err) {
-								done(err);
-								return;
-							}
-
-							assert.deepEqual(text, 'plop' + content.substr(7));
-							assert(callbackCalled, 'Callback has been called.');
-
-							done();
-						}));
-				});
-			});
-		});
+					t.is(text, 'b');
+					t.end();
+				})
+			);
 	});
+
+	test.cb(
+		`for ${version} streams, works with changing content when removing the first chunk`,
+		t => {
+			t.plan(2);
+
+			streamtest[version]
+				.fromChunks([content])
+				.pipe(
+					new FirstChunkStream(
+						{chunkLength: 7},
+						(error, chunk, encoding, callback) => {
+							if (error) {
+								t.end(error);
+								return;
+							}
+
+							t.is(chunk.toString('utf-8'), content.substr(0, 7));
+
+							callback(null, Buffer.alloc(0));
+						}
+					)
+				)
+				.pipe(
+					streamtest[version].toText((error, text) => {
+						if (error) {
+							t.end(error);
+							return;
+						}
+
+						t.is(text, content.substr(7));
+						t.end();
+					})
+				);
+		}
+	);
+
+	test.cb(
+		`for ${version} streams, works with changing content when replacing per a larger chunk`,
+		t => {
+			t.plan(2);
+
+			streamtest[version]
+				.fromChunks([content.substr(0, 7), content.substr(7)])
+				.pipe(
+					new FirstChunkStream(
+						{chunkLength: 7},
+						(error, chunk, encoding, callback) => {
+							if (error) {
+								t.end(error);
+								return;
+							}
+
+							t.is(chunk.toString('utf-8'), content.substr(0, 7));
+
+							callback(null, Buffer.concat([chunk, Buffer.from('plop')]));
+						}
+					)
+				)
+				.pipe(
+					streamtest[version].toText((error, text) => {
+						if (error) {
+							t.end(error);
+							return;
+						}
+
+						t.is(text, content.substr(0, 7) + 'plop' + content.substr(7));
+						t.end();
+					})
+				);
+		}
+	);
+
+	test.cb(
+		`for ${version} streams, works with changing content when replacing per a smaller chunk`,
+		t => {
+			t.plan(2);
+
+			streamtest[version]
+				.fromChunks(content.split(''))
+				.pipe(
+					new FirstChunkStream(
+						{chunkLength: 7},
+						(error, chunk, encoding, callback) => {
+							if (error) {
+								t.end(error);
+								return;
+							}
+
+							t.is(chunk.toString('utf-8'), content.substr(0, 7));
+
+							callback(null, Buffer.from('plop'));
+						}
+					)
+				)
+				.pipe(
+					streamtest[version].toText((error, text) => {
+						if (error) {
+							t.end(error);
+							return;
+						}
+
+						t.is(text, 'plop' + content.substr(7));
+						t.end();
+					})
+				);
+		}
+	);
 });
