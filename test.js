@@ -4,20 +4,29 @@ import FirstChunkStream from '.';
 
 const content = 'unicorn rainbows \ncake';
 
+/* eslint-disable no-new */
 test('fails when the callback is not provided', t => {
-	t.throws(() => new FirstChunkStream({chunkLength: 7}));
+	t.throws(() => {
+		new FirstChunkStream({chunkLength: 7});
+	});
 });
 
 test('fails when trying to use it in objectMode', t => {
-	t.throws(
-		() => new FirstChunkStream({chunkLength: 7, objectMode: true}, () => {})
-	);
+	t.throws(() => {
+		new FirstChunkStream({chunkLength: 7, objectMode: true}, () => {});
+	});
 });
 
 test('fails when firstChunk size is bad or missing', t => {
-	t.throws(() => new FirstChunkStream({chunkLength: 'feferf'}, () => {}));
-	t.throws(() => new FirstChunkStream({}, () => {}));
+	t.throws(() => {
+		new FirstChunkStream({chunkLength: 'feferf'}, () => {});
+	});
+
+	t.throws(() => {
+		new FirstChunkStream({}, () => {});
+	});
 });
+/* eslint-enable no-new */
 
 streamtest.versions.forEach(version => {
 	test.cb(
@@ -29,9 +38,9 @@ streamtest.versions.forEach(version => {
 				{chunkLength: 7},
 				(error, chunk, encoding, callback) => {
 					t.is(error.message, 'Hey!');
-					t.is(chunk.toString('utf-8'), content.substr(0, 2));
+					t.is(chunk.toString('utf8'), content.slice(0, 2));
 
-					callback(null, Buffer.from(content.substr(0, 7)));
+					callback(null, Buffer.from(content.slice(0, 7)));
 				}
 			);
 
@@ -50,7 +59,7 @@ streamtest.versions.forEach(version => {
 			stream.write(Buffer.from(content[0]));
 			stream.write(Buffer.from(content[1]));
 			stream.emit('error', new Error('Hey!'));
-			stream.write(Buffer.from(content.substr(7)));
+			stream.write(Buffer.from(content.slice(7)));
 			stream.end();
 		}
 	);
@@ -80,7 +89,7 @@ streamtest.versions.forEach(version => {
 						return;
 					}
 
-					t.is(text, content.substr(7));
+					t.is(text, content.slice(7));
 					t.end();
 				})
 			);
@@ -88,7 +97,7 @@ streamtest.versions.forEach(version => {
 			stream.write(Buffer.from(content[0]));
 			stream.write(Buffer.from(content[1]));
 			stream.emit('error', new Error('Hey!'));
-			stream.write(Buffer.from(content.substr(7)));
+			stream.write(Buffer.from(content.slice(7)));
 			stream.end();
 		}
 	);
@@ -123,9 +132,9 @@ streamtest.versions.forEach(version => {
 				})
 			);
 
-			stream.write(Buffer.from(content.substr(0, 7)));
+			stream.write(Buffer.from(content.slice(0, 7)));
 			stream.emit('error', new Error('Hey!'));
-			stream.write(Buffer.from(content.substr(7)));
+			stream.write(Buffer.from(content.slice(7)));
 			stream.end();
 		}
 	);
@@ -144,7 +153,7 @@ streamtest.versions.forEach(version => {
 							return;
 						}
 
-						t.is(chunk.toString('utf-8'), '');
+						t.is(chunk.toString('utf8'), '');
 
 						callback(null, Buffer.from('popop'));
 					}
@@ -179,7 +188,7 @@ streamtest.versions.forEach(version => {
 								return;
 							}
 
-							t.is(chunk.toString('utf-8'), content.substr(0, 7));
+							t.is(chunk.toString('utf8'), content.slice(0, 7));
 
 							callback(null, chunk);
 						}
@@ -205,7 +214,7 @@ streamtest.versions.forEach(version => {
 			t.plan(2);
 
 			streamtest[version]
-				.fromChunks([content.substr(0, 7), content.substr(7)])
+				.fromChunks([content.slice(0, 7), content.slice(7)])
 				.pipe(
 					new FirstChunkStream(
 						{chunkLength: 7},
@@ -215,7 +224,7 @@ streamtest.versions.forEach(version => {
 								return;
 							}
 
-							t.is(chunk.toString('utf-8'), content.substr(0, 7));
+							t.is(chunk.toString('utf8'), content.slice(0, 7));
 
 							callback(null, chunk);
 						}
@@ -251,7 +260,7 @@ streamtest.versions.forEach(version => {
 								return;
 							}
 
-							t.is(chunk.toString('utf-8'), content.substr(0, 7));
+							t.is(chunk.toString('utf8'), content.slice(0, 7));
 
 							callback(null, chunk);
 						}
@@ -287,7 +296,7 @@ streamtest.versions.forEach(version => {
 							return;
 						}
 
-						t.is(chunk.toString('utf-8'), content.substr(0, 7));
+						t.is(chunk.toString('utf8'), content.slice(0, 7));
 
 						firstChunkStream.pipe(
 							streamtest[version].toText((error, text) => {
@@ -322,7 +331,7 @@ streamtest.versions.forEach(version => {
 							return;
 						}
 
-						t.is(chunk.toString('utf-8'), 'abc');
+						t.is(chunk.toString('utf8'), 'abc');
 
 						callback(null, Buffer.from('b'));
 					}
@@ -357,7 +366,7 @@ streamtest.versions.forEach(version => {
 								return;
 							}
 
-							t.is(chunk.toString('utf-8'), content.substr(0, 7));
+							t.is(chunk.toString('utf8'), content.slice(0, 7));
 
 							callback(null, Buffer.alloc(0));
 						}
@@ -370,7 +379,7 @@ streamtest.versions.forEach(version => {
 							return;
 						}
 
-						t.is(text, content.substr(7));
+						t.is(text, content.slice(7));
 						t.end();
 					})
 				);
@@ -383,7 +392,7 @@ streamtest.versions.forEach(version => {
 			t.plan(2);
 
 			streamtest[version]
-				.fromChunks([content.substr(0, 7), content.substr(7)])
+				.fromChunks([content.slice(0, 7), content.slice(7)])
 				.pipe(
 					new FirstChunkStream(
 						{chunkLength: 7},
@@ -393,7 +402,7 @@ streamtest.versions.forEach(version => {
 								return;
 							}
 
-							t.is(chunk.toString('utf-8'), content.substr(0, 7));
+							t.is(chunk.toString('utf8'), content.slice(0, 7));
 
 							callback(null, Buffer.concat([chunk, Buffer.from('plop')]));
 						}
@@ -406,7 +415,7 @@ streamtest.versions.forEach(version => {
 							return;
 						}
 
-						t.is(text, content.substr(0, 7) + 'plop' + content.substr(7));
+						t.is(text, content.slice(0, 7) + 'plop' + content.slice(7));
 						t.end();
 					})
 				);
@@ -429,7 +438,7 @@ streamtest.versions.forEach(version => {
 								return;
 							}
 
-							t.is(chunk.toString('utf-8'), content.substr(0, 7));
+							t.is(chunk.toString('utf8'), content.slice(0, 7));
 
 							callback(null, Buffer.from('plop'));
 						}
@@ -442,7 +451,7 @@ streamtest.versions.forEach(version => {
 							return;
 						}
 
-						t.is(text, 'plop' + content.substr(7));
+						t.is(text, 'plop' + content.slice(7));
 						t.end();
 					})
 				);

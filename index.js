@@ -1,7 +1,7 @@
 'use strict';
-const {Duplex} = require('readable-stream');
+const {Duplex: DuplexStream} = require('stream');
 
-class FirstChunkStream extends Duplex {
+class FirstChunkStream extends DuplexStream {
 	constructor(options = {}, callback) {
 		const state = {
 			sent: false,
@@ -9,7 +9,7 @@ class FirstChunkStream extends Duplex {
 			size: 0
 		};
 
-		if (!(callback instanceof Function)) {
+		if (typeof callback !== 'function') {
 			throw new TypeError('FirstChunkStream constructor requires a callback as its second argument.');
 		}
 
@@ -106,9 +106,9 @@ function createReadStreamBackpressureManager(readableStream) {
 	const manager = {
 		waitPush: true,
 		programmedPushs: [],
-		programPush(chunk, encoding, done = () => {}) {
+		programPush(chunk, encoding, isDone = () => {}) {
 			// Store the current write
-			manager.programmedPushs.push([chunk, encoding, done]);
+			manager.programmedPushs.push([chunk, encoding, isDone]);
 			// Need to be async to avoid nested push attempts
 			// Programm a push attempt
 			setImmediate(manager.attemptPush);

@@ -1,6 +1,6 @@
 /// <reference types="node"/>
 import * as fs from 'fs';
-import {Duplex} from 'readable-stream';
+import {Duplex} from 'stream';
 import {expectType, expectError} from 'tsd';
 import FirstChunkStream = require('.');
 

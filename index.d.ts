@@ -1,7 +1,10 @@
-import {Duplex, DuplexOptions} from 'readable-stream';
+import {
+	Duplex as DuplexStream,
+	DuplexOptions as DuplexStreamOption
+} from 'stream';
 
 declare namespace FirstChunkStream {
-	interface Options extends Readonly<DuplexOptions> {
+	interface Options extends Readonly<DuplexStreamOption> {
 		/**
 		How many bytes you want to buffer.
 		*/
@@ -16,7 +19,7 @@ declare namespace FirstChunkStream {
 	) => void;
 }
 
-declare class FirstChunkStream extends Duplex {
+declare class FirstChunkStream extends DuplexStream {
 	/**
 	Buffer and transform the `n` first bytes of a stream.
 
