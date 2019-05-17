@@ -6,6 +6,7 @@ class FirstChunkStream extends DuplexStream {
 		const state = {
 			sent: false,
 			chunks: [],
+			processingError: false,
 			size: 0
 		};
 
@@ -48,23 +49,42 @@ class FirstChunkStream extends DuplexStream {
 
 			state.sent = true;
 
+			state.processingError = true;
+
+			const stopProcessingError = () => {
+				state.processingError = false;
+				this.emit('errorProcessed');
+			};
+
 			callback(error, buffer, encoding, (error, buffer, encoding) => {
 				if (error) {
-					setImmediate(() => this.emit('error', error));
+					setImmediate(() => {
+						this.emit('error', error);
+						stopProcessingError();
+					});
 					return;
 				}
 
 				if (!buffer) {
 					done();
+					stopProcessingError();
 					return;
 				}
 
 				state.manager.programPush(buffer, encoding, done);
+				stopProcessingError();
 			});
 		};
 
 		// Writes management
 		this._write = (chunk, encoding, done) => {
+			if (state.processingError) {
+				this.once('errorProcessed', () => {
+					this._write(chunk, encoding, done);
+				});
+				return;
+			}
+
 			state.encoding = encoding;
 
 			if (state.sent) {

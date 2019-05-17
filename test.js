@@ -39,8 +39,9 @@ streamtest.versions.forEach(version => {
 				(error, chunk, encoding, callback) => {
 					t.is(error.message, 'Hey!');
 					t.is(chunk.toString('utf8'), content.slice(0, 2));
-
-					callback(null, Buffer.from(content.slice(0, 7)));
+					setImmediate(() => {
+						callback(null, Buffer.from(content.slice(0, 7)));
+					});
 				}
 			);
 
