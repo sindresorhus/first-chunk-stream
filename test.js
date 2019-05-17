@@ -36,12 +36,11 @@ streamtest.versions.forEach(version => {
 
 			const stream = new FirstChunkStream(
 				{chunkLength: 7},
-				(error, chunk, encoding, callback) => {
+				async (error, chunk) => {
 					t.is(error.message, 'Hey!');
 					t.is(chunk.toString('utf8'), content.slice(0, 2));
-					setImmediate(() => {
-						callback(null, Buffer.from(content.slice(0, 7)));
-					});
+
+					return Buffer.from(content.slice(0, 7));
 				}
 			);
 
@@ -72,14 +71,14 @@ streamtest.versions.forEach(version => {
 
 			const stream = new FirstChunkStream(
 				{chunkLength: 7},
-				(error, chunk, encoding, callback) => {
+				async error => {
 					t.is(error.message, 'Hey!');
 
 					stream.on('error', error => {
 						t.is(error.message, 'Ho!');
 					});
 
-					callback(new Error('Ho!'));
+					throw new Error('Ho!');
 				}
 			);
 
@@ -110,10 +109,9 @@ streamtest.versions.forEach(version => {
 
 			const stream = new FirstChunkStream(
 				{chunkLength: 7},
-				(error, chunk, encoding, callback) => {
+				async (error, chunk) => {
 					t.pass();
-
-					callback(null, chunk);
+					return chunk;
 				}
 			);
 
@@ -148,7 +146,7 @@ streamtest.versions.forEach(version => {
 			.pipe(
 				new FirstChunkStream(
 					{chunkLength: 0},
-					(error, chunk, encoding, callback) => {
+					async (error, chunk) => {
 						if (error) {
 							t.end(error);
 							return;
@@ -156,7 +154,7 @@ streamtest.versions.forEach(version => {
 
 						t.is(chunk.toString('utf8'), '');
 
-						callback(null, Buffer.from('popop'));
+						return Buffer.from('popop');
 					}
 				)
 			)
@@ -183,7 +181,7 @@ streamtest.versions.forEach(version => {
 				.pipe(
 					new FirstChunkStream(
 						{chunkLength: 7},
-						(error, chunk, encoding, callback) => {
+						async (error, chunk) => {
 							if (error) {
 								t.end(error);
 								return;
@@ -191,7 +189,7 @@ streamtest.versions.forEach(version => {
 
 							t.is(chunk.toString('utf8'), content.slice(0, 7));
 
-							callback(null, chunk);
+							return chunk;
 						}
 					)
 				)
@@ -219,7 +217,7 @@ streamtest.versions.forEach(version => {
 				.pipe(
 					new FirstChunkStream(
 						{chunkLength: 7},
-						(error, chunk, encoding, callback) => {
+						async (error, chunk) => {
 							if (error) {
 								t.end(error);
 								return;
@@ -227,7 +225,7 @@ streamtest.versions.forEach(version => {
 
 							t.is(chunk.toString('utf8'), content.slice(0, 7));
 
-							callback(null, chunk);
+							return chunk;
 						}
 					)
 				)
@@ -255,7 +253,7 @@ streamtest.versions.forEach(version => {
 				.pipe(
 					new FirstChunkStream(
 						{chunkLength: 7},
-						(error, chunk, encoding, callback) => {
+						async (error, chunk) => {
 							if (error) {
 								t.end(error);
 								return;
@@ -263,7 +261,7 @@ streamtest.versions.forEach(version => {
 
 							t.is(chunk.toString('utf8'), content.slice(0, 7));
 
-							callback(null, chunk);
+							return chunk;
 						}
 					)
 				)
@@ -291,7 +289,7 @@ streamtest.versions.forEach(version => {
 			const firstChunkStream = inputStream.pipe(
 				new FirstChunkStream(
 					{chunkLength: 7},
-					(error, chunk, encoding, callback) => {
+					async (error, chunk) => {
 						if (error) {
 							t.end(error);
 							return;
@@ -311,7 +309,7 @@ streamtest.versions.forEach(version => {
 							})
 						);
 
-						callback(null, chunk);
+						return chunk;
 					}
 				)
 			);
@@ -326,7 +324,7 @@ streamtest.versions.forEach(version => {
 			.pipe(
 				new FirstChunkStream(
 					{chunkLength: 7},
-					(error, chunk, encoding, callback) => {
+					async (error, chunk) => {
 						if (error) {
 							t.end(error);
 							return;
@@ -334,7 +332,7 @@ streamtest.versions.forEach(version => {
 
 						t.is(chunk.toString('utf8'), 'abc');
 
-						callback(null, Buffer.from('b'));
+						return Buffer.from('b');
 					}
 				)
 			)
@@ -361,7 +359,7 @@ streamtest.versions.forEach(version => {
 				.pipe(
 					new FirstChunkStream(
 						{chunkLength: 7},
-						(error, chunk, encoding, callback) => {
+						async (error, chunk) => {
 							if (error) {
 								t.end(error);
 								return;
@@ -369,7 +367,7 @@ streamtest.versions.forEach(version => {
 
 							t.is(chunk.toString('utf8'), content.slice(0, 7));
 
-							callback(null, Buffer.alloc(0));
+							return Buffer.alloc(0);
 						}
 					)
 				)
@@ -397,7 +395,7 @@ streamtest.versions.forEach(version => {
 				.pipe(
 					new FirstChunkStream(
 						{chunkLength: 7},
-						(error, chunk, encoding, callback) => {
+						async (error, chunk) => {
 							if (error) {
 								t.end(error);
 								return;
@@ -405,7 +403,7 @@ streamtest.versions.forEach(version => {
 
 							t.is(chunk.toString('utf8'), content.slice(0, 7));
 
-							callback(null, Buffer.concat([chunk, Buffer.from('plop')]));
+							return Buffer.concat([chunk, Buffer.from('plop')]);
 						}
 					)
 				)
@@ -433,7 +431,7 @@ streamtest.versions.forEach(version => {
 				.pipe(
 					new FirstChunkStream(
 						{chunkLength: 7},
-						(error, chunk, encoding, callback) => {
+						async (error, chunk) => {
 							if (error) {
 								t.end(error);
 								return;
@@ -441,7 +439,7 @@ streamtest.versions.forEach(version => {
 
 							t.is(chunk.toString('utf8'), content.slice(0, 7));
 
-							callback(null, Buffer.from('plop'));
+							return Buffer.from('plop');
 						}
 					)
 				)

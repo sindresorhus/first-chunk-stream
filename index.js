@@ -36,7 +36,6 @@ class FirstChunkStream extends DuplexStream {
 
 		this.on('error', state.errorHandler);
 
-		// Callback management
 		const processCallback = (error, buffer, encoding, done = () => {}) => {
 			// When doing sync writes + emitting an errror it can happen that
 			// Remove the error listener on the next tick if an error where fired
@@ -56,19 +55,23 @@ class FirstChunkStream extends DuplexStream {
 				this.emit('errorProcessed');
 			};
 
-			callback(error, buffer, encoding, (error, buffer, encoding) => {
-				if (error) {
-					setImmediate(() => {
-						this.emit('error', error);
-						stopProcessingError();
-					});
-					return;
-				}
-
+			callback(error, buffer, encoding).catch(error2 => {
+				setImmediate(() => {
+					this.emit('error', error2);
+					stopProcessingError();
+				});
+			}).then(buffer => { // eslint-disable-line promise/prefer-await-to-then
 				if (!buffer) {
 					done();
 					stopProcessingError();
 					return;
+				}
+
+				let encoding;
+
+				if (typeof buffer !== 'string' && !Buffer.isBuffer(buffer) && !(buffer instanceof Uint8Array)) {
+					encoding = buffer.encoding;
+					buffer = buffer.buffer;
 				}
 
 				state.manager.programPush(buffer, encoding, done);
