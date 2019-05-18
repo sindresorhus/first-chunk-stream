@@ -11,12 +11,9 @@ declare namespace FirstChunkStream {
 		readonly chunkLength: number;
 	}
 
-	type TransformFunction = (
-		error: Error | null,
-		chunk: Buffer,
-		encoding: string,
-		callback: (error?: Error | null, buffer?: string | Buffer | Uint8Array, encoding?: string) => void
-	) => void;
+	type NullableBufferLike = string | Buffer | Uint8Array | void | null;
+
+	type TransformFunction = (error: Error | null, chunk: Buffer, encoding: string ) => Promise<NullableBufferLike | {buffer?: NullableBufferLike, encoding?: string}>;
 }
 
 declare class FirstChunkStream extends DuplexStream {
@@ -36,13 +33,12 @@ declare class FirstChunkStream extends DuplexStream {
 
 	// unicorn.txt => unicorn rainbow
 	const stream = fs.createReadStream('unicorn.txt')
-		.pipe(new FirstChunkStream({chunkLength: 7}, (error, chunk, encoding, callback) => {
+		.pipe(new FirstChunkStream({chunkLength: 7}, async (error, chunk, encoding) => {
 			if (error) {
-				callback(error);
-				return;
+				throw error;
 			}
 
-			callback(null, chunk.toString(encoding).toUpperCase());
+			return chunk.toString(encoding).toUpperCase();
 		}));
 
 	(async () => {

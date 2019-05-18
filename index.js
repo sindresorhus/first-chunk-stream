@@ -69,7 +69,7 @@ class FirstChunkStream extends DuplexStream {
 
 				let encoding;
 
-				if (typeof buffer !== 'string' && !Buffer.isBuffer(buffer) && !(buffer instanceof Uint8Array)) {
+				if ((typeof buffer !== 'string') && !Buffer.isBuffer(buffer) && !(buffer instanceof Uint8Array)) {
 					encoding = buffer.encoding;
 					buffer = buffer.buffer;
 				}

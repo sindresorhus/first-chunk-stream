@@ -13,19 +13,18 @@ $ npm install first-chunk-stream
 ## Usage
 
 ```js
-const fs = require('fs');
-const getStream = require('get-stream');
-const FirstChunkStream = require('first-chunk-stream');
+import * as fs from 'fs';
+import getStream = require('get-stream');
+import FirstChunkStream = require('first-chunk-stream');
 
 // unicorn.txt => unicorn rainbow
 const stream = fs.createReadStream('unicorn.txt')
-	.pipe(new FirstChunkStream({chunkLength: 7}, (error, chunk, encoding, callback) => {
+	.pipe(new FirstChunkStream({chunkLength: 7}, async (error, chunk, encoding) => {
 		if (error) {
-			callback(error);
-			return;
+			throw error;
 		}
 
-		callback(null, chunk.toString(encoding).toUpperCase());
+		return chunk.toString(encoding).toUpperCase();
 	}));
 
 (async () => {
@@ -47,11 +46,11 @@ const stream = fs.createReadStream('unicorn.txt')
 
 Returns a `FirstChunkStream` instance.
 
-#### transform(error, chunk, encoding, callback)
+#### transform(error, chunk, encoding)
 
 Type: `Function`
 
-The function that gets the required `options.chunkLength` bytes.
+Async function that gets the required `options.chunkLength` bytes.
 
 Note that the buffer can have a smaller length than the required one. In that case, it will be due to the fact that the complete stream contents has a length less than the `options.chunkLength` value. You should check for this yourself if you strictly depend on the length.
 
