@@ -59,12 +59,18 @@ class FirstChunkStream extends DuplexStream {
 				this.emit('errorProcessed');
 			};
 
-			callback(error, buffer, encoding).catch(error2 => {
-				setImmediate(() => {
-					this.emit('error', error2);
-					stopProcessingError();
-				});
-			}).then(result => { // eslint-disable-line promise/prefer-await-to-then
+			(async () => {
+				let result;
+				try {
+					result = await callback(error, buffer, encoding);
+				} catch (error) {
+					setImmediate(() => {
+						this.emit('error', error);
+						stopProcessingError();
+					});
+					return;
+				}
+
 				if (!result) {
 					done();
 				} else if (result === FirstChunkStream.stop) {
@@ -76,7 +82,7 @@ class FirstChunkStream extends DuplexStream {
 				}
 
 				stopProcessingError();
-			});
+			})();
 		};
 
 		// Writes management
