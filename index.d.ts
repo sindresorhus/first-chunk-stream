@@ -3,6 +3,8 @@ import {
 	DuplexOptions as DuplexStreamOption
 } from 'stream';
 
+declare const stop: unique symbol;
+
 declare namespace FirstChunkStream {
 	interface Options extends Readonly<DuplexStreamOption> {
 		/**
@@ -11,9 +13,11 @@ declare namespace FirstChunkStream {
 		readonly chunkLength: number;
 	}
 
-	type NullableBufferLike = string | Buffer | Uint8Array | void | null;
+	type StopSymbol = typeof stop;
 
-	type TransformFunction = (error: Error | null, chunk: Buffer, encoding: string ) => Promise<NullableBufferLike | {buffer?: NullableBufferLike, encoding?: string}>;
+	type BufferLike = string | Buffer | Uint8Array;
+
+	type TransformFunction = (error: Error | null, chunk: Buffer, encoding: string ) => Promise<StopSymbol | BufferLike | {buffer: BufferLike, encoding?: string}>;
 }
 
 declare class FirstChunkStream extends DuplexStream {
@@ -57,6 +61,8 @@ declare class FirstChunkStream extends DuplexStream {
 		options: FirstChunkStream.Options,
 		transform: FirstChunkStream.TransformFunction
 	);
+
+	static readonly stop: FirstChunkStream.StopSymbol;
 }
 
 export = FirstChunkStream;

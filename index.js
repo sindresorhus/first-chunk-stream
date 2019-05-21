@@ -1,6 +1,8 @@
 'use strict';
 const {Duplex: DuplexStream} = require('stream');
 
+const stop = Symbol('FirstChunkStream.stop');
+
 class FirstChunkStream extends DuplexStream {
 	constructor(options, callback) {
 		const state = {
@@ -71,7 +73,7 @@ class FirstChunkStream extends DuplexStream {
 					return;
 				}
 
-				if (result === FirstChunkStream.stop) {
+				if (result === stop) {
 					state.manager.programPush(null, undefined, done);
 				} else if (Buffer.isBuffer(result) || (result instanceof Uint8Array) || (typeof result === 'string')) {
 					state.manager.programPush(result, undefined, done);
@@ -173,6 +175,6 @@ function createReadStreamBackpressureManager(readableStream) {
 	return manager;
 }
 
-FirstChunkStream.stop = Symbol('FirstChunkStream.stop');
+FirstChunkStream.stop = stop;
 
 module.exports = FirstChunkStream;
