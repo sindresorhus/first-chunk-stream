@@ -69,15 +69,10 @@ class FirstChunkStream extends DuplexStream {
 					done();
 				} else if (buffer === FirstChunkStream.stop) {
 					state.manager.programPush(null, undefined, done);
+				} else if (Buffer.isBuffer(buffer) || (buffer instanceof Uint8Array) || (typeof buffer === 'string')) {
+					state.manager.programPush(buffer, undefined, done);
 				} else {
-					let encoding;
-
-					if ((typeof buffer !== 'string') && !Buffer.isBuffer(buffer) && !(buffer instanceof Uint8Array)) {
-						encoding = buffer.encoding;
-						buffer = buffer.buffer;
-					}
-
-					state.manager.programPush(buffer, encoding, done);
+					state.manager.programPush(buffer.buffer, buffer.encoding, done);
 				}
 
 				stopProcessingError();
