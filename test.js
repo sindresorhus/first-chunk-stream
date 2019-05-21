@@ -5,6 +5,12 @@ import FirstChunkStream from '.';
 const content = 'unicorn rainbows \ncake';
 
 /* eslint-disable no-new */
+test('fails when the options are not provided', t => {
+	t.throws(() => {
+		new FirstChunkStream();
+	});
+});
+
 test('fails when the callback is not provided', t => {
 	t.throws(() => {
 		new FirstChunkStream({chunkLength: 7});
@@ -379,6 +385,76 @@ streamtest.versions.forEach(version => {
 						}
 
 						t.is(text, content.slice(7));
+						t.end();
+					})
+				);
+		}
+	);
+
+	test.cb(
+		`for ${version} streams, works with string and encoding`,
+		t => {
+			t.plan(2);
+
+			streamtest[version]
+				.fromChunks([content])
+				.pipe(
+					new FirstChunkStream(
+						{chunkLength: 7},
+						async (error, chunk) => {
+							if (error) {
+								t.end(error);
+								return;
+							}
+
+							t.is(chunk.toString('utf8'), content.slice(0, 7));
+							return {buffer: chunk.toString('utf8'), encoding: 'utf8'};
+						}
+					)
+				)
+				.pipe(
+					streamtest[version].toText((error, text) => {
+						if (error) {
+							t.end(error);
+							return;
+						}
+
+						t.is(text, content);
+						t.end();
+					})
+				);
+		}
+	);
+
+	test.cb(
+		`for ${version} streams, works with stop`,
+		t => {
+			t.plan(2);
+
+			streamtest[version]
+				.fromChunks([content])
+				.pipe(
+					new FirstChunkStream(
+						{chunkLength: 7},
+						async (error, chunk) => {
+							if (error) {
+								t.end(error);
+								return;
+							}
+
+							t.is(chunk.toString('utf8'), content.slice(0, 7));
+							return FirstChunkStream.stop;
+						}
+					)
+				)
+				.pipe(
+					streamtest[version].toText((error, text) => {
+						if (error) {
+							t.end(error);
+							return;
+						}
+
+						t.is(text, '');
 						t.end();
 					})
 				);

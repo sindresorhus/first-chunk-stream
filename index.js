@@ -2,13 +2,17 @@
 const {Duplex: DuplexStream} = require('stream');
 
 class FirstChunkStream extends DuplexStream {
-	constructor(options = {}, callback) {
+	constructor(options, callback) {
 		const state = {
 			sent: false,
 			chunks: [],
 			processingError: false,
 			size: 0
 		};
+
+		if (typeof options !== 'object' || options === null) {
+			throw new TypeError('FirstChunkStream constructor requires `options` to be an object.');
+		}
 
 		if (typeof callback !== 'function') {
 			throw new TypeError('FirstChunkStream constructor requires a callback as its second argument.');
@@ -63,18 +67,19 @@ class FirstChunkStream extends DuplexStream {
 			}).then(buffer => { // eslint-disable-line promise/prefer-await-to-then
 				if (!buffer) {
 					done();
-					stopProcessingError();
-					return;
+				} else if (buffer === FirstChunkStream.stop) {
+					state.manager.programPush(null, undefined, done);
+				} else {
+					let encoding;
+
+					if ((typeof buffer !== 'string') && !Buffer.isBuffer(buffer) && !(buffer instanceof Uint8Array)) {
+						encoding = buffer.encoding;
+						buffer = buffer.buffer;
+					}
+
+					state.manager.programPush(buffer, encoding, done);
 				}
 
-				let encoding;
-
-				if ((typeof buffer !== 'string') && !Buffer.isBuffer(buffer) && !(buffer instanceof Uint8Array)) {
-					encoding = buffer.encoding;
-					buffer = buffer.buffer;
-				}
-
-				state.manager.programPush(buffer, encoding, done);
 				stopProcessingError();
 			});
 		};
@@ -168,5 +173,7 @@ function createReadStreamBackpressureManager(readableStream) {
 
 	return manager;
 }
+
+FirstChunkStream.stop = Symbol('FirstChunkStream.stop');
 
 module.exports = FirstChunkStream;
