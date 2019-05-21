@@ -64,15 +64,15 @@ class FirstChunkStream extends DuplexStream {
 					this.emit('error', error2);
 					stopProcessingError();
 				});
-			}).then(buffer => { // eslint-disable-line promise/prefer-await-to-then
-				if (!buffer) {
+			}).then(result => { // eslint-disable-line promise/prefer-await-to-then
+				if (!result) {
 					done();
-				} else if (buffer === FirstChunkStream.stop) {
+				} else if (result === FirstChunkStream.stop) {
 					state.manager.programPush(null, undefined, done);
-				} else if (Buffer.isBuffer(buffer) || (buffer instanceof Uint8Array) || (typeof buffer === 'string')) {
-					state.manager.programPush(buffer, undefined, done);
+				} else if (Buffer.isBuffer(result) || (result instanceof Uint8Array) || (typeof result === 'string')) {
+					state.manager.programPush(result, undefined, done);
 				} else {
-					state.manager.programPush(buffer.buffer, buffer.encoding, done);
+					state.manager.programPush(result.buffer, result.encoding, done);
 				}
 
 				stopProcessingError();
