@@ -71,9 +71,7 @@ class FirstChunkStream extends DuplexStream {
 					return;
 				}
 
-				if (!result) {
-					done();
-				} else if (result === FirstChunkStream.stop) {
+				if (result === FirstChunkStream.stop) {
 					state.manager.programPush(null, undefined, done);
 				} else if (Buffer.isBuffer(result) || (result instanceof Uint8Array) || (typeof result === 'string')) {
 					state.manager.programPush(result, undefined, done);
