@@ -13,19 +13,19 @@ test('fails when the options are not provided', t => {
 
 test('fails when the callback is not provided', t => {
 	t.throws(() => {
-		new FirstChunkStream({chunkLength: 7});
+		new FirstChunkStream({chunkSize: 7});
 	});
 });
 
 test('fails when trying to use it in objectMode', t => {
 	t.throws(() => {
-		new FirstChunkStream({chunkLength: 7, objectMode: true}, () => {});
+		new FirstChunkStream({chunkSize: 7, objectMode: true}, () => {});
 	});
 });
 
 test('fails when firstChunk size is bad or missing', t => {
 	t.throws(() => {
-		new FirstChunkStream({chunkLength: 'feferf'}, () => {});
+		new FirstChunkStream({chunkSize: 'feferf'}, () => {});
 	});
 
 	t.throws(() => {
@@ -41,7 +41,7 @@ streamtest.versions.forEach(version => {
 			t.plan(3);
 
 			const stream = new FirstChunkStream(
-				{chunkLength: 7},
+				{chunkSize: 7},
 				async (error, chunk) => {
 					t.is(error.message, 'Hey!');
 					t.is(chunk.toString('utf8'), content.slice(0, 2));
@@ -76,7 +76,7 @@ streamtest.versions.forEach(version => {
 			t.plan(3);
 
 			const stream = new FirstChunkStream(
-				{chunkLength: 7},
+				{chunkSize: 7},
 				async error => {
 					t.is(error.message, 'Hey!');
 
@@ -114,7 +114,7 @@ streamtest.versions.forEach(version => {
 			t.plan(3);
 
 			const stream = new FirstChunkStream(
-				{chunkLength: 7},
+				{chunkSize: 7},
 				async (error, chunk) => {
 					t.pass();
 					return chunk;
@@ -151,7 +151,7 @@ streamtest.versions.forEach(version => {
 			.fromChunks([content])
 			.pipe(
 				new FirstChunkStream(
-					{chunkLength: 0},
+					{chunkSize: 0},
 					async (error, chunk) => {
 						if (error) {
 							t.end(error);
@@ -186,7 +186,7 @@ streamtest.versions.forEach(version => {
 				.fromChunks([content])
 				.pipe(
 					new FirstChunkStream(
-						{chunkLength: 7},
+						{chunkSize: 7},
 						async (error, chunk) => {
 							if (error) {
 								t.end(error);
@@ -222,7 +222,7 @@ streamtest.versions.forEach(version => {
 				.fromChunks([content.slice(0, 7), content.slice(7)])
 				.pipe(
 					new FirstChunkStream(
-						{chunkLength: 7},
+						{chunkSize: 7},
 						async (error, chunk) => {
 							if (error) {
 								t.end(error);
@@ -258,7 +258,7 @@ streamtest.versions.forEach(version => {
 				.fromChunks(content.split(''))
 				.pipe(
 					new FirstChunkStream(
-						{chunkLength: 7},
+						{chunkSize: 7},
 						async (error, chunk) => {
 							if (error) {
 								t.end(error);
@@ -294,7 +294,7 @@ streamtest.versions.forEach(version => {
 
 			const firstChunkStream = inputStream.pipe(
 				new FirstChunkStream(
-					{chunkLength: 7},
+					{chunkSize: 7},
 					async (error, chunk) => {
 						if (error) {
 							t.end(error);
@@ -329,7 +329,7 @@ streamtest.versions.forEach(version => {
 			.fromChunks(['a', 'b', 'c'])
 			.pipe(
 				new FirstChunkStream(
-					{chunkLength: 7},
+					{chunkSize: 7},
 					async (error, chunk) => {
 						if (error) {
 							t.end(error);
@@ -364,7 +364,7 @@ streamtest.versions.forEach(version => {
 				.fromChunks([content])
 				.pipe(
 					new FirstChunkStream(
-						{chunkLength: 7},
+						{chunkSize: 7},
 						async (error, chunk) => {
 							if (error) {
 								t.end(error);
@@ -400,7 +400,7 @@ streamtest.versions.forEach(version => {
 				.fromChunks([content])
 				.pipe(
 					new FirstChunkStream(
-						{chunkLength: 7},
+						{chunkSize: 7},
 						async (error, chunk) => {
 							if (error) {
 								t.end(error);
@@ -435,7 +435,7 @@ streamtest.versions.forEach(version => {
 				.fromChunks([content])
 				.pipe(
 					new FirstChunkStream(
-						{chunkLength: 7},
+						{chunkSize: 7},
 						async (error, chunk) => {
 							if (error) {
 								t.end(error);
@@ -470,7 +470,7 @@ streamtest.versions.forEach(version => {
 				.fromChunks([content.slice(0, 7), content.slice(7)])
 				.pipe(
 					new FirstChunkStream(
-						{chunkLength: 7},
+						{chunkSize: 7},
 						async (error, chunk) => {
 							if (error) {
 								t.end(error);
@@ -506,7 +506,7 @@ streamtest.versions.forEach(version => {
 				.fromChunks(content.split(''))
 				.pipe(
 					new FirstChunkStream(
-						{chunkLength: 7},
+						{chunkSize: 7},
 						async (error, chunk) => {
 							if (error) {
 								t.end(error);

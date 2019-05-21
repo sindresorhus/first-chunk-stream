@@ -10,7 +10,7 @@ declare namespace FirstChunkStream {
 		/**
 		How many bytes you want to buffer.
 		*/
-		readonly chunkLength: number;
+		readonly chunkSize: number;
 	}
 
 	type StopSymbol = typeof stop;
@@ -25,9 +25,9 @@ declare class FirstChunkStream extends DuplexStream {
 	Buffer and transform the `n` first bytes of a stream.
 
 	@param options - The options object is passed to the [`Duplex` stream](https://nodejs.org/api/stream.html#stream_class_stream_duplex) constructor allowing you to customize your stream behavior.
-	@param transform - The function that gets the required `options.chunkLength` bytes.
+	@param transform - The function that gets the required `options.chunkSize` bytes.
 
-	Note that the buffer can have a smaller length than the required one. In that case, it will be due to the fact that the complete stream contents has a length less than the `options.chunkLength` value. You should check for this yourself if you strictly depend on the length.
+	Note that the buffer can have a smaller length than the required one. In that case, it will be due to the fact that the complete stream contents has a length less than the `options.chunkSize` value. You should check for this yourself if you strictly depend on the length.
 
 	@example
 	```
@@ -37,7 +37,7 @@ declare class FirstChunkStream extends DuplexStream {
 
 	// unicorn.txt => unicorn rainbow
 	const stream = fs.createReadStream('unicorn.txt')
-		.pipe(new FirstChunkStream({chunkLength: 7}, async (error, chunk, encoding) => {
+		.pipe(new FirstChunkStream({chunkSize: 7}, async (error, chunk, encoding) => {
 			if (error) {
 				throw error;
 			}

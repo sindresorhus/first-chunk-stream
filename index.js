@@ -20,8 +20,8 @@ class FirstChunkStream extends DuplexStream {
 			throw new TypeError('FirstChunkStream constructor requires a callback as its second argument.');
 		}
 
-		if (typeof options.chunkLength !== 'number') {
-			throw new TypeError('FirstChunkStream constructor requires `options.chunkLength` to be a number.');
+		if (typeof options.chunkSize !== 'number') {
+			throw new TypeError('FirstChunkStream constructor requires `options.chunkSize` to be a number.');
 		}
 
 		if (options.objectMode) {
@@ -98,13 +98,13 @@ class FirstChunkStream extends DuplexStream {
 
 			if (state.sent) {
 				state.manager.programPush(chunk, state.encoding, done);
-			} else if (chunk.length < options.chunkLength - state.size) {
+			} else if (chunk.length < options.chunkSize - state.size) {
 				state.chunks.push(chunk);
 				state.size += chunk.length;
 				done();
 			} else {
-				state.chunks.push(chunk.slice(0, options.chunkLength - state.size));
-				chunk = chunk.slice(options.chunkLength - state.size);
+				state.chunks.push(chunk.slice(0, options.chunkSize - state.size));
+				chunk = chunk.slice(options.chunkSize - state.size);
 				state.size += state.chunks[state.chunks.length - 1].length;
 
 				processCallback(null, Buffer.concat(state.chunks, state.size), state.encoding, () => {
