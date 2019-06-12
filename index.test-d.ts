@@ -8,8 +8,7 @@ const options: FirstChunkStream.Options = {chunkSize: 1};
 
 expectError(new FirstChunkStream({}, () => {}));
 
-const firstChunkStream = new FirstChunkStream({chunkSize: 7}, async (error, chunk, encoding) => {
-		expectType<Error | null>(error);
+const firstChunkStream = new FirstChunkStream({chunkSize: 7}, async (chunk, encoding) => {
 		expectType<Buffer>(chunk);
 		expectType<string>(encoding);
 		return '';

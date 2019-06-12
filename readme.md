@@ -19,11 +19,7 @@ import FirstChunkStream = require('first-chunk-stream');
 
 // unicorn.txt => unicorn rainbow
 const stream = fs.createReadStream('unicorn.txt')
-	.pipe(new FirstChunkStream({chunkLength: 7}, async (error, chunk, encoding) => {
-		if (error) {
-			throw error;
-		}
-
+	.pipe(new FirstChunkStream({chunkLength: 7}, async (chunk, encoding) => {
 		return chunk.toString(encoding).toUpperCase();
 	}));
 
@@ -46,7 +42,7 @@ const stream = fs.createReadStream('unicorn.txt')
 
 Returns a `FirstChunkStream` instance.
 
-#### transform(error, chunk, encoding)
+#### transform(chunk, encoding)
 
 Type: `Function`
 

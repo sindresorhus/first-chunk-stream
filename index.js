@@ -8,7 +8,6 @@ class FirstChunkStream extends DuplexStream {
 		const state = {
 			sent: false,
 			chunks: [],
-			processingError: false,
 			size: 0
 		};
 
@@ -33,43 +32,18 @@ class FirstChunkStream extends DuplexStream {
 		// Initialize the internal state
 		state.manager = createReadStreamBackpressureManager(this);
 
-		// Errors management
-		// We need to execute the callback or emit en error dependending on the fact
-		// the firstChunk is sent or not
-		state.errorHandler = error => {
-			processCallback(error, Buffer.concat(state.chunks, state.size), state.encoding);
-		};
-
-		this.on('error', state.errorHandler);
-
-		const processCallback = (error, buffer, encoding, done = () => {}) => {
-			// When doing sync writes + emitting an errror it can happen that
-			// Remove the error listener on the next tick if an error where fired
-			// to avoid unwanted error throwing
-			if (error) {
-				setImmediate(() => this.removeListener('error', state.errorHandler));
-			} else {
-				this.removeListener('error', state.errorHandler);
-			}
-
+		const processCallback = (buffer, encoding, done) => {
 			state.sent = true;
-
-			state.processingError = true;
-
-			const stopProcessingError = () => {
-				state.processingError = false;
-				this.emit('errorProcessed');
-			};
 
 			(async () => {
 				let result;
 				try {
-					result = await callback(error, buffer, encoding);
+					result = await callback(buffer, encoding);
 				} catch (error) {
 					setImmediate(() => {
 						this.emit('error', error);
-						stopProcessingError();
 					});
+					done();
 					return;
 				}
 
@@ -80,22 +54,12 @@ class FirstChunkStream extends DuplexStream {
 				} else {
 					state.manager.programPush(result.buffer, result.encoding, done);
 				}
-
-				stopProcessingError();
 			})();
 		};
 
 		// Writes management
 		this._write = (chunk, encoding, done) => {
-			if (state.processingError) {
-				this.once('errorProcessed', () => {
-					this._write(chunk, encoding, done);
-				});
-				return;
-			}
-
 			state.encoding = encoding;
-
 			if (state.sent) {
 				state.manager.programPush(chunk, state.encoding, done);
 			} else if (chunk.length < options.chunkSize - state.size) {
@@ -107,7 +71,7 @@ class FirstChunkStream extends DuplexStream {
 				chunk = chunk.slice(options.chunkSize - state.size);
 				state.size += state.chunks[state.chunks.length - 1].length;
 
-				processCallback(null, Buffer.concat(state.chunks, state.size), state.encoding, () => {
+				processCallback(Buffer.concat(state.chunks, state.size), state.encoding, () => {
 					if (chunk.length === 0) {
 						done();
 						return;
@@ -120,7 +84,7 @@ class FirstChunkStream extends DuplexStream {
 
 		this.on('finish', () => {
 			if (!state.sent) {
-				return processCallback(null, Buffer.concat(state.chunks, state.size), state.encoding, () => {
+				return processCallback(Buffer.concat(state.chunks, state.size), state.encoding, () => {
 					state.manager.programPush(null, state.encoding);
 				});
 			}
