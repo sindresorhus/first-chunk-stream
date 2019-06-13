@@ -42,8 +42,8 @@ class FirstChunkStream extends DuplexStream {
 				} catch (error) {
 					setImmediate(() => {
 						this.emit('error', error);
+						done();
 					});
-					done();
 					return;
 				}
 
