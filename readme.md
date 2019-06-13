@@ -38,9 +38,9 @@ const stream = fs.createReadStream('unicorn.txt')
 
 ## API
 
-### firstChunkStream(options, transform)
+### FirstChunkStream(options, transform)
 
-Returns a `FirstChunkStream` instance.
+`FirstChunkStream` constructor.
 
 #### transform(chunk, encoding)
 
@@ -48,7 +48,37 @@ Type: `Function`
 
 Async function that gets the required `options.chunkSize` bytes.
 
+Returns buffer-like object or `string` or object of form {buffer: `Buffer`, encoding: `string`} to send to stream or `firstChunkStream.stop` to end stream right away.
+
+Errors thrown from this function will be emitted as stream errors.
+
 Note that the buffer can have a smaller length than the required one. In that case, it will be due to the fact that the complete stream contents has a length less than the `options.chunkSize` value. You should check for this yourself if you strictly depend on the length.
+
+```
+new FirstChunkStream({chunkSize: 7}, async (chunk, encoding) => {
+	return chunk.toString(encoding).toUpperCase(); // Send string to stream
+});
+
+new FirstChunkStream({chunkSize: 7}, async (chunk, encoding) => {
+	return chunk; // Send buffer to stream
+});
+
+new FirstChunkStream({chunkSize: 7}, async (chunk, encoding) => {
+	return {
+		buffer: chunk,
+		encoding: encoding,
+	}; // Send buffer with encoding to stream
+});
+
+new FirstChunkStream({chunkSize: 7}, async (chunk, encoding) => {
+	return FirstChunkStream.stop; // End the stream
+});
+
+new FirstChunkStream({chunkSize: 7}, async (chunk, encoding) => {
+	throw new Error('Unconditional error'); // Emit stream error
+});
+
+```
 
 #### options
 

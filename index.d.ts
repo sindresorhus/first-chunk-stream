@@ -58,6 +58,16 @@ declare class FirstChunkStream extends DuplexStream {
 		transform: FirstChunkStream.TransformFunction
 	);
 
+	/**
+	Symbol used to end stream from callback.
+
+	@example
+	```
+	new FirstChunkStream({chunkSize: 7}, async (chunk, encoding) => {
+		return FirstChunkStream.stop;
+	});
+	```
+	*/
 	static readonly stop: FirstChunkStream.StopSymbol;
 }
 
