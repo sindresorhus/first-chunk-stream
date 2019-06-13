@@ -1,6 +1,6 @@
 {
 	"name": "first-chunk-stream",
-	"version": "3.0.0",
+	"version": "4.0.0",
 	"description": "Buffer and transform the n first bytes of a stream",
 	"license": "MIT",
 	"repository": "sindresorhus/first-chunk-stream",
