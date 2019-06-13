@@ -46,15 +46,15 @@ const stream = fs.createReadStream('unicorn.txt')
 
 Type: `Function`
 
-Async function that gets the required `options.chunkSize` bytes.
+Async function that receives the required `options.chunkSize` bytes.
 
-Returns buffer-like object or `string` or object of form {buffer: `Buffer`, encoding: `string`} to send to stream or `firstChunkStream.stop` to end stream right away.
+Expected to return an buffer-like object or `string` or object of form {buffer: `Buffer`, encoding: `string`} to send to stream or `firstChunkStream.stop` to end stream right away.
 
-Errors thrown from this function will be emitted as stream errors.
+An error thrown from this function will be emitted as stream errors.
 
 Note that the buffer can have a smaller length than the required one. In that case, it will be due to the fact that the complete stream contents has a length less than the `options.chunkSize` value. You should check for this yourself if you strictly depend on the length.
 
-```
+```js
 new FirstChunkStream({chunkSize: 7}, async (chunk, encoding) => {
 	return chunk.toString(encoding).toUpperCase(); // Send string to stream
 });
@@ -71,28 +71,22 @@ new FirstChunkStream({chunkSize: 7}, async (chunk, encoding) => {
 });
 
 new FirstChunkStream({chunkSize: 7}, async (chunk, encoding) => {
-	return FirstChunkStream.stop; // End the stream
+	return FirstChunkStream.stop; // End the stream early
 });
 
 new FirstChunkStream({chunkSize: 7}, async (chunk, encoding) => {
 	throw new Error('Unconditional error'); // Emit stream error
 });
-
 ```
 
 #### options
 
 Type: `object`
 
-The options object is passed to the [`Duplex` stream](https://nodejs.org/api/stream.html#stream_class_stream_duplex) constructor allowing you to customize your stream behavior. In addition you can specify the following option:
+The options object is passed to the [`Duplex` stream](https://nodejs.org/api/stream.html#stream_class_stream_duplex) constructor allowing you to customize your stream behavior. In addition, you can specify the following option:
 
 ###### chunkSize
 
 Type: `number`
 
 How many bytes you want to buffer.
-
-
-## License
-
-MIT © [Sindre Sorhus](https://sindresorhus.com)

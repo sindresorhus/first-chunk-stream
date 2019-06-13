@@ -25,7 +25,7 @@ declare class FirstChunkStream extends DuplexStream {
 	Buffer and transform the `n` first bytes of a stream.
 
 	@param options - The options object is passed to the [`Duplex` stream](https://nodejs.org/api/stream.html#stream_class_stream_duplex) constructor allowing you to customize your stream behavior.
-	@param transform - The function that gets the required `options.chunkSize` bytes.
+	@param transform - Async function that receives the required `options.chunkSize` bytes.
 
 	Note that the buffer can have a smaller length than the required one. In that case, it will be due to the fact that the complete stream contents has a length less than the `options.chunkSize` value. You should check for this yourself if you strictly depend on the length.
 
@@ -59,7 +59,7 @@ declare class FirstChunkStream extends DuplexStream {
 	);
 
 	/**
-	Symbol used to end stream from callback.
+	Symbol used to end the stream early.
 
 	@example
 	```
