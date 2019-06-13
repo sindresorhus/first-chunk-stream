@@ -13,13 +13,13 @@ $ npm install first-chunk-stream
 ## Usage
 
 ```js
-import * as fs from 'fs';
-import getStream = require('get-stream');
-import FirstChunkStream = require('first-chunk-stream');
+const fs = require('fs');
+const getStream = require('get-stream');
+const FirstChunkStream = require('first-chunk-stream');
 
 // unicorn.txt => unicorn rainbow
 const stream = fs.createReadStream('unicorn.txt')
-	.pipe(new FirstChunkStream({chunkLength: 7}, async (chunk, encoding) => {
+	.pipe(new FirstChunkStream({chunkSize: 7}, async (chunk, encoding) => {
 		return chunk.toString(encoding).toUpperCase();
 	}));
 
@@ -46,9 +46,9 @@ Returns a `FirstChunkStream` instance.
 
 Type: `Function`
 
-Async function that gets the required `options.chunkLength` bytes.
+Async function that gets the required `options.chunkSize` bytes.
 
-Note that the buffer can have a smaller length than the required one. In that case, it will be due to the fact that the complete stream contents has a length less than the `options.chunkLength` value. You should check for this yourself if you strictly depend on the length.
+Note that the buffer can have a smaller length than the required one. In that case, it will be due to the fact that the complete stream contents has a length less than the `options.chunkSize` value. You should check for this yourself if you strictly depend on the length.
 
 #### options
 
@@ -56,7 +56,7 @@ Type: `object`
 
 The options object is passed to the [`Duplex` stream](https://nodejs.org/api/stream.html#stream_class_stream_duplex) constructor allowing you to customize your stream behavior. In addition you can specify the following option:
 
-###### chunkLength
+###### chunkSize
 
 Type: `number`
 
