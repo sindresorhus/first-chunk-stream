@@ -1,4 +1,4 @@
-# first-chunk-stream [![Build Status](https://travis-ci.org/sindresorhus/first-chunk-stream.svg?branch=master)](https://travis-ci.org/sindresorhus/first-chunk-stream)
+# first-chunk-stream
 
 > Buffer and transform the n first bytes of a stream
 
