@@ -2,20 +2,18 @@
 
 > Buffer and transform the n first bytes of a stream
 
-
 ## Install
 
 ```
 $ npm install first-chunk-stream
 ```
 
-
 ## Usage
 
 ```js
-const fs = require('fs');
-const getStream = require('get-stream');
-const FirstChunkStream = require('first-chunk-stream');
+import fs from 'node:fs';
+import getStream from 'get-stream';
+import FirstChunkStream from 'first-chunk-stream';
 
 // unicorn.txt => unicorn rainbow
 const stream = fs.createReadStream('unicorn.txt')
@@ -23,18 +21,15 @@ const stream = fs.createReadStream('unicorn.txt')
 		return chunk.toString(encoding).toUpperCase();
 	}));
 
-(async () => {
-	const data = await getStream(stream);
+const data = await getStream(stream);
 
-	if (data.length < 7) {
-		throw new Error('Couldn\'t get the minimum required first chunk length');
-	}
+if (data.length < 7) {
+	throw new Error('Couldn\'t get the minimum required first chunk length');
+}
 
-	console.log(data);
-	//=> 'UNICORN rainbow'
-})();
+console.log(data);
+//=> 'UNICORN rainbow'
 ```
-
 
 ## API
 
@@ -55,6 +50,8 @@ An error thrown from this function will be emitted as stream errors.
 Note that the buffer can have a smaller length than the required one. In that case, it will be due to the fact that the complete stream contents has a length less than the `options.chunkSize` value. You should check for this yourself if you strictly depend on the length.
 
 ```js
+import FirstChunkStream from 'first-chunk-stream';
+
 new FirstChunkStream({chunkSize: 7}, async (chunk, encoding) => {
 	return chunk.toString(encoding).toUpperCase(); // Send string to stream
 });
@@ -89,4 +86,4 @@ The options object is passed to the [`Duplex` stream](https://nodejs.org/api/str
 
 Type: `number`
 
-How many bytes you want to buffer.
+The number of bytes to buffer.

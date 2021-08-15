@@ -1,26 +1,37 @@
+import {Buffer} from 'node:buffer';
 import {
 	Duplex as DuplexStream,
-	DuplexOptions as DuplexStreamOption
-} from 'stream';
+	DuplexOptions as DuplexStreamOption,
+} from 'node:stream';
 
-declare const stop: unique symbol;
-
-declare namespace FirstChunkStream {
-	interface Options extends Readonly<DuplexStreamOption> {
-		/**
-		How many bytes you want to buffer.
-		*/
-		readonly chunkSize: number;
-	}
-
-	type StopSymbol = typeof stop;
-
-	type BufferLike = string | Buffer | Uint8Array;
-
-	type TransformFunction = (chunk: Buffer, encoding: string) => Promise<StopSymbol | BufferLike | {buffer: BufferLike, encoding?: string}>;
+export interface Options extends Readonly<DuplexStreamOption> {
+	/**
+	The number of bytes to buffer.
+	*/
+	readonly chunkSize: number;
 }
 
-declare class FirstChunkStream extends DuplexStream {
+export type StopSymbol = typeof FirstChunkStream.stop;
+
+export type BufferLike = string | Buffer | Uint8Array;
+
+export type TransformFunction = (chunk: Buffer, encoding: string) => Promise<StopSymbol | BufferLike | {buffer: BufferLike; encoding?: string}>;
+
+export default class FirstChunkStream extends DuplexStream {
+	/**
+	Symbol used to end the stream early.
+
+	@example
+	```
+	import FirstChunkStream from 'first-chunk-stream';
+
+	new FirstChunkStream({chunkSize: 7}, async (chunk, encoding) => {
+		return FirstChunkStream.stop;
+	});
+	```
+	*/
+	static readonly stop: unique symbol;
+
 	/**
 	Buffer and transform the `n` first bytes of a stream.
 
@@ -31,9 +42,9 @@ declare class FirstChunkStream extends DuplexStream {
 
 	@example
 	```
-	import * as fs from 'fs';
-	import getStream = require('get-stream');
-	import FirstChunkStream = require('first-chunk-stream');
+	import fs from 'node:fs';
+	import getStream from 'get-stream';
+	import FirstChunkStream from 'first-chunk-stream';
 
 	// unicorn.txt => unicorn rainbow
 	const stream = fs.createReadStream('unicorn.txt')
@@ -41,34 +52,18 @@ declare class FirstChunkStream extends DuplexStream {
 			return chunk.toString(encoding).toUpperCase();
 		}));
 
-	(async () => {
-		const data = await getStream(stream);
+	const data = await getStream(stream);
 
-		if (data.length < 7) {
-			throw new Error('Couldn\'t get the minimum required first chunk length');
-		}
+	if (data.length < 7) {
+		throw new Error('Couldn\'t get the minimum required first chunk length');
+	}
 
-		console.log(data);
-		//=> 'UNICORN rainbow'
-	})();
+	console.log(data);
+	//=> 'UNICORN rainbow'
 	```
 	*/
 	constructor(
-		options: FirstChunkStream.Options,
-		transform: FirstChunkStream.TransformFunction
+		options: Options,
+		transform: TransformFunction
 	);
-
-	/**
-	Symbol used to end the stream early.
-
-	@example
-	```
-	new FirstChunkStream({chunkSize: 7}, async (chunk, encoding) => {
-		return FirstChunkStream.stop;
-	});
-	```
-	*/
-	static readonly stop: FirstChunkStream.StopSymbol;
 }
-
-export = FirstChunkStream;

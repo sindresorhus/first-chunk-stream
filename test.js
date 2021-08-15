@@ -1,6 +1,7 @@
+import {Buffer} from 'node:buffer';
 import test from 'ava';
 import streamtest from 'streamtest';
-import FirstChunkStream from '.';
+import FirstChunkStream from './index.js';
 
 const content = 'unicorn rainbows \ncake';
 
@@ -34,7 +35,7 @@ test('fails when firstChunk size is bad or missing', t => {
 });
 /* eslint-enable no-new */
 
-streamtest.versions.forEach(version => {
+for (const version of streamtest.versions) {
 	test.cb(
 		`for ${version} streams, emitting errors emits errors before first chunk is sent`,
 		t => {
@@ -45,7 +46,7 @@ streamtest.versions.forEach(version => {
 				async chunk => {
 					t.pass();
 					return chunk;
-				}
+				},
 			);
 
 			stream.on('error', error => {
@@ -61,7 +62,7 @@ streamtest.versions.forEach(version => {
 
 					t.is(text, content);
 					t.end();
-				})
+				}),
 			);
 
 			stream.write(Buffer.from(content.slice(0, 3)));
@@ -70,7 +71,7 @@ streamtest.versions.forEach(version => {
 			stream.emit('error', new Error('Hey!'));
 			stream.write(Buffer.from(content.slice(7)));
 			stream.end();
-		}
+		},
 	);
 
 	test.cb(
@@ -82,7 +83,7 @@ streamtest.versions.forEach(version => {
 				{chunkSize: 7},
 				async () => {
 					throw new Error('Ho!');
-				}
+				},
 			);
 
 			stream.on('error', error => {
@@ -98,13 +99,13 @@ streamtest.versions.forEach(version => {
 
 					t.is(text, content.slice(7));
 					t.end();
-				})
+				}),
 			);
 
 			stream.write(Buffer.from(content.slice(0, 7)));
 			stream.write(Buffer.from(content.slice(7)));
 			stream.end();
-		}
+		},
 	);
 
 	test.cb(`for ${version} streams, requires a 0 length first chunk`, t => {
@@ -118,8 +119,8 @@ streamtest.versions.forEach(version => {
 					async chunk => {
 						t.is(chunk.toString('utf8'), '');
 						return Buffer.from('popop');
-					}
-				)
+					},
+				),
 			)
 			.pipe(
 				streamtest[version].toText((error, text) => {
@@ -130,7 +131,7 @@ streamtest.versions.forEach(version => {
 
 					t.is(text, 'popop' + content);
 					t.end();
-				})
+				}),
 			);
 	});
 
@@ -147,8 +148,8 @@ streamtest.versions.forEach(version => {
 						async chunk => {
 							t.is(chunk.toString('utf8'), content.slice(0, 7));
 							return chunk;
-						}
-					)
+						},
+					),
 				)
 				.pipe(
 					streamtest[version].toText((error, text) => {
@@ -159,9 +160,9 @@ streamtest.versions.forEach(version => {
 
 						t.is(text, content);
 						t.end();
-					})
+					}),
 				);
-		}
+		},
 	);
 
 	test.cb(
@@ -177,8 +178,8 @@ streamtest.versions.forEach(version => {
 						async chunk => {
 							t.is(chunk.toString('utf8'), content.slice(0, 7));
 							return chunk;
-						}
-					)
+						},
+					),
 				)
 				.pipe(
 					streamtest[version].toText((error, text) => {
@@ -189,9 +190,9 @@ streamtest.versions.forEach(version => {
 
 						t.is(text, content);
 						t.end();
-					})
+					}),
 				);
-		}
+		},
 	);
 
 	test.cb(
@@ -207,8 +208,8 @@ streamtest.versions.forEach(version => {
 						async chunk => {
 							t.is(chunk.toString('utf8'), content.slice(0, 7));
 							return chunk;
-						}
-					)
+						},
+					),
 				)
 				.pipe(
 					streamtest[version].toText((error, text) => {
@@ -219,9 +220,9 @@ streamtest.versions.forEach(version => {
 
 						t.is(text, content);
 						t.end();
-					})
+					}),
 				);
-		}
+		},
 	);
 
 	test.cb(
@@ -246,14 +247,14 @@ streamtest.versions.forEach(version => {
 
 								t.is(text, content);
 								t.end();
-							})
+							}),
 						);
 
 						return chunk;
-					}
-				)
+					},
+				),
 			);
-		}
+		},
 	);
 
 	test.cb(`for ${version} streams, works with insufficient content`, t => {
@@ -267,8 +268,8 @@ streamtest.versions.forEach(version => {
 					async chunk => {
 						t.is(chunk.toString('utf8'), 'abc');
 						return Buffer.from('b');
-					}
-				)
+					},
+				),
 			)
 			.pipe(
 				streamtest[version].toText((error, text) => {
@@ -279,7 +280,7 @@ streamtest.versions.forEach(version => {
 
 					t.is(text, 'b');
 					t.end();
-				})
+				}),
 			);
 	});
 
@@ -296,8 +297,8 @@ streamtest.versions.forEach(version => {
 						async chunk => {
 							t.is(chunk.toString('utf8'), content.slice(0, 7));
 							return Buffer.alloc(0);
-						}
-					)
+						},
+					),
 				)
 				.pipe(
 					streamtest[version].toText((error, text) => {
@@ -308,9 +309,9 @@ streamtest.versions.forEach(version => {
 
 						t.is(text, content.slice(7));
 						t.end();
-					})
+					}),
 				);
-		}
+		},
 	);
 
 	test.cb(
@@ -326,8 +327,8 @@ streamtest.versions.forEach(version => {
 						async chunk => {
 							t.is(chunk.toString('utf8'), content.slice(0, 7));
 							return {buffer: chunk.toString('utf8'), encoding: 'utf8'};
-						}
-					)
+						},
+					),
 				)
 				.pipe(
 					streamtest[version].toText((error, text) => {
@@ -338,9 +339,9 @@ streamtest.versions.forEach(version => {
 
 						t.is(text, content);
 						t.end();
-					})
+					}),
 				);
-		}
+		},
 	);
 
 	test.cb(
@@ -356,8 +357,8 @@ streamtest.versions.forEach(version => {
 						async chunk => {
 							t.is(chunk.toString('utf8'), content.slice(0, 7));
 							return FirstChunkStream.stop;
-						}
-					)
+						},
+					),
 				)
 				.pipe(
 					streamtest[version].toText((error, text) => {
@@ -368,9 +369,9 @@ streamtest.versions.forEach(version => {
 
 						t.is(text, '');
 						t.end();
-					})
+					}),
 				);
-		}
+		},
 	);
 
 	test.cb(
@@ -386,8 +387,8 @@ streamtest.versions.forEach(version => {
 						async chunk => {
 							t.is(chunk.toString('utf8'), content.slice(0, 7));
 							return Buffer.concat([chunk, Buffer.from('plop')]);
-						}
-					)
+						},
+					),
 				)
 				.pipe(
 					streamtest[version].toText((error, text) => {
@@ -398,9 +399,9 @@ streamtest.versions.forEach(version => {
 
 						t.is(text, content.slice(0, 7) + 'plop' + content.slice(7));
 						t.end();
-					})
+					}),
 				);
-		}
+		},
 	);
 
 	test.cb(
@@ -416,8 +417,8 @@ streamtest.versions.forEach(version => {
 						async chunk => {
 							t.is(chunk.toString('utf8'), content.slice(0, 7));
 							return Buffer.from('plop');
-						}
-					)
+						},
+					),
 				)
 				.pipe(
 					streamtest[version].toText((error, text) => {
@@ -428,8 +429,8 @@ streamtest.versions.forEach(version => {
 
 						t.is(text, 'plop' + content.slice(7));
 						t.end();
-					})
+					}),
 				);
-		}
+		},
 	);
-});
+}

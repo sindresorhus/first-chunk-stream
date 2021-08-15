@@ -1,14 +1,14 @@
-'use strict';
-const {Duplex: DuplexStream} = require('stream');
+import {Buffer} from 'node:buffer';
+import {Duplex as DuplexStream} from 'node:stream';
 
 const stop = Symbol('FirstChunkStream.stop');
 
-class FirstChunkStream extends DuplexStream {
+export default class FirstChunkStream extends DuplexStream {
 	constructor(options, callback) {
 		const state = {
-			sent: false,
+			isSent: false,
 			chunks: [],
-			size: 0
+			size: 0,
 		};
 
 		if (typeof options !== 'object' || options === null) {
@@ -33,7 +33,7 @@ class FirstChunkStream extends DuplexStream {
 		state.manager = createReadStreamBackpressureManager(this);
 
 		const processCallback = (buffer, encoding, done) => {
-			state.sent = true;
+			state.isSent = true;
 
 			(async () => {
 				let result;
@@ -60,7 +60,7 @@ class FirstChunkStream extends DuplexStream {
 		// Writes management
 		this._write = (chunk, encoding, done) => {
 			state.encoding = encoding;
-			if (state.sent) {
+			if (state.isSent) {
 				state.manager.programPush(chunk, state.encoding, done);
 			} else if (chunk.length < options.chunkSize - state.size) {
 				state.chunks.push(chunk);
@@ -83,7 +83,7 @@ class FirstChunkStream extends DuplexStream {
 		};
 
 		this.on('finish', () => {
-			if (!state.sent) {
+			if (!state.isSent) {
 				return processCallback(Buffer.concat(state.chunks, state.size), state.encoding, () => {
 					state.manager.programPush(null, state.encoding);
 				});
@@ -124,7 +124,7 @@ function createReadStreamBackpressureManager(readableStream) {
 					readableStream.emit('readable');
 				});
 			}
-		}
+		},
 	};
 
 	function streamFilterRestoreRead() {
@@ -140,5 +140,3 @@ function createReadStreamBackpressureManager(readableStream) {
 }
 
 FirstChunkStream.stop = stop;
-
-module.exports = FirstChunkStream;
