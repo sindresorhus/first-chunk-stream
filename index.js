@@ -69,7 +69,7 @@ export default class FirstChunkStream extends DuplexStream {
 			} else {
 				state.chunks.push(chunk.slice(0, options.chunkSize - state.size));
 				chunk = chunk.slice(options.chunkSize - state.size);
-				state.size += state.chunks[state.chunks.length - 1].length;
+				state.size += state.chunks.at(-1).length;
 
 				processCallback(concatUint8Arrays(state.chunks, state.size), state.encoding, () => {
 					if (chunk.length === 0) {

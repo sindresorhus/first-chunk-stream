@@ -4,8 +4,8 @@
 
 ## Install
 
-```
-$ npm install first-chunk-stream
+```sh
+npm install first-chunk-stream
 ```
 
 ## Usage
@@ -14,11 +14,12 @@ $ npm install first-chunk-stream
 import fs from 'node:fs';
 import getStream from 'get-stream';
 import FirstChunkStream from 'first-chunk-stream';
+import {uint8ArrayToString} from 'uint8array-extras';
 
 // unicorn.txt => unicorn rainbow
 const stream = fs.createReadStream('unicorn.txt')
 	.pipe(new FirstChunkStream({chunkSize: 7}, async (chunk, encoding) => {
-		return chunk.toString(encoding).toUpperCase();
+		return uint8ArrayToString(chunk).toUpperCase();
 	}));
 
 const data = await getStream(stream);

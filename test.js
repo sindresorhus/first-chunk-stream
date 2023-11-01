@@ -201,7 +201,7 @@ for (const version of streamtest.versions) {
 			t.plan(2);
 
 			streamtest[version]
-				.fromChunks(content.split(''))
+				.fromChunks([...content])
 				.pipe(
 					new FirstChunkStream(
 						{chunkSize: 7},
@@ -230,7 +230,7 @@ for (const version of streamtest.versions) {
 		t => {
 			t.plan(2);
 
-			const inputStream = streamtest[version].fromChunks(content.split(''));
+			const inputStream = streamtest[version].fromChunks([...content]);
 
 			const firstChunkStream = inputStream.pipe(
 				new FirstChunkStream(
@@ -410,7 +410,7 @@ for (const version of streamtest.versions) {
 			t.plan(2);
 
 			streamtest[version]
-				.fromChunks(content.split(''))
+				.fromChunks([...content])
 				.pipe(
 					new FirstChunkStream(
 						{chunkSize: 7},

@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-import {Duplex as DuplexStream} from 'node:stream';
+import {type Duplex as DuplexStream} from 'node:stream';
 import {expectType, expectError} from 'tsd';
 import {stringToUint8Array} from 'uint8array-extras';
 import FirstChunkStream from './index.js';
@@ -14,7 +14,7 @@ const firstChunkStream = new FirstChunkStream({chunkSize: 7}, async (chunk, enco
 expectType<FirstChunkStream>(firstChunkStream);
 expectType<DuplexStream>(firstChunkStream);
 
-fs.createReadStream('unicorn.txt').pipe(firstChunkStream); // eslint-disable-line @typescript-eslint/no-unsafe-member-access
+fs.createReadStream('unicorn.txt').pipe(firstChunkStream);
 
 expectType<FirstChunkStream>(new FirstChunkStream({chunkSize: 7}, async () => FirstChunkStream.stop));
 expectType<FirstChunkStream>(new FirstChunkStream({chunkSize: 7}, async () => ''));

@@ -1,14 +1,14 @@
 import {
 	Duplex as DuplexStream,
-	DuplexOptions as DuplexStreamOption,
+	type DuplexOptions as DuplexStreamOption,
 } from 'node:stream';
 
-export interface Options extends Readonly<DuplexStreamOption> {
+export type Options = {
 	/**
 	The number of bytes to buffer.
 	*/
 	readonly chunkSize: number;
-}
+} & Readonly<DuplexStreamOption>;
 
 export type StopSymbol = typeof FirstChunkStream.stop;
 
@@ -44,11 +44,12 @@ export default class FirstChunkStream extends DuplexStream {
 	import fs from 'node:fs';
 	import getStream from 'get-stream';
 	import FirstChunkStream from 'first-chunk-stream';
+	import {uint8ArrayToString} from 'uint8array-extras';
 
 	// unicorn.txt => unicorn rainbow
 	const stream = fs.createReadStream('unicorn.txt')
 		.pipe(new FirstChunkStream({chunkSize: 7}, async (chunk, encoding) => {
-			return chunk.toString(encoding).toUpperCase();
+			return uint8ArrayToString(chunk).toUpperCase();
 		}));
 
 	const data = await getStream(stream);
