@@ -54,10 +54,6 @@ Note that the buffer can have a smaller length than the required one. In that ca
 import FirstChunkStream from 'first-chunk-stream';
 
 new FirstChunkStream({chunkSize: 7}, async (chunk, encoding) => {
-	return chunk.toString(encoding).toUpperCase(); // Send string to stream
-});
-
-new FirstChunkStream({chunkSize: 7}, async (chunk, encoding) => {
 	return chunk; // Send buffer to stream
 });
 
