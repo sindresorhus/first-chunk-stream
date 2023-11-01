@@ -49,7 +49,7 @@ export default class FirstChunkStream extends DuplexStream {
 
 				if (result === stop) {
 					state.manager.programPush(null, undefined, done);
-				} else if (isUint8Array(result) || (result instanceof Uint8Array) || (typeof result === 'string')) {
+				} else if (isUint8Array(result) || (typeof result === 'string')) {
 					state.manager.programPush(result, undefined, done);
 				} else {
 					state.manager.programPush(result.buffer, result.encoding, done);
