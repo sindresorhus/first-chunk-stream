@@ -1,4 +1,3 @@
-import {Buffer} from 'node:buffer';
 import test from 'ava';
 import streamtest from 'streamtest';
 import {concatUint8Arrays, stringToUint8Array, uint8ArrayToString} from 'uint8array-extras';
@@ -297,7 +296,7 @@ for (const version of streamtest.versions) {
 						{chunkSize: 7},
 						async chunk => {
 							t.is(uint8ArrayToString(chunk), content.slice(0, 7));
-							return Buffer.alloc(0);
+							return new Uint8Array(0);
 						},
 					),
 				)

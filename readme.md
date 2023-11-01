@@ -43,7 +43,7 @@ Type: `Function`
 
 Async function that receives the required `options.chunkSize` bytes.
 
-Expected to return an buffer-like object or `string` or object of form {buffer: `Buffer`, encoding: `string`} to send to stream or `firstChunkStream.stop` to end stream right away.
+Expected to return an buffer-like object or `string` or object of form {buffer: `Uint8Array`, encoding: `string`} to send to stream or `firstChunkStream.stop` to end stream right away.
 
 An error thrown from this function will be emitted as stream errors.
 
