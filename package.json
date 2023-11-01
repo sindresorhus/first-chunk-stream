@@ -39,7 +39,9 @@
 		"nyc": "^15.1.0",
 		"streamtest": "^2.0.0",
 		"tsd": "^0.17.0",
-		"uint8array-extras": "^0.5.0",
 		"xo": "^0.44.0"
+	},
+	"dependencies": {
+		"uint8array-extras": "^0.5.0"
 	}
 }
