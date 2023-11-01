@@ -15,7 +15,7 @@ export type StopSymbol = typeof FirstChunkStream.stop;
 
 export type BufferLike = string | Buffer | Uint8Array;
 
-export type TransformFunction = (chunk: Buffer, encoding: string) => Promise<StopSymbol | BufferLike | {buffer: BufferLike; encoding?: string}>;
+export type TransformFunction = (chunk: Uint8Array, encoding: string) => Promise<StopSymbol | BufferLike | {buffer: BufferLike; encoding?: string}>;
 
 export default class FirstChunkStream extends DuplexStream {
 	/**

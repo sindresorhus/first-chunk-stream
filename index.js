@@ -1,5 +1,5 @@
-import {Buffer} from 'node:buffer';
 import {Duplex as DuplexStream} from 'node:stream';
+import {concatUint8Arrays, isUint8Array} from 'uint8array-extras';
 
 const stop = Symbol('FirstChunkStream.stop');
 
@@ -49,7 +49,7 @@ export default class FirstChunkStream extends DuplexStream {
 
 				if (result === stop) {
 					state.manager.programPush(null, undefined, done);
-				} else if (Buffer.isBuffer(result) || (result instanceof Uint8Array) || (typeof result === 'string')) {
+				} else if (isUint8Array(result) || (result instanceof Uint8Array) || (typeof result === 'string')) {
 					state.manager.programPush(result, undefined, done);
 				} else {
 					state.manager.programPush(result.buffer, result.encoding, done);
@@ -71,7 +71,7 @@ export default class FirstChunkStream extends DuplexStream {
 				chunk = chunk.slice(options.chunkSize - state.size);
 				state.size += state.chunks[state.chunks.length - 1].length;
 
-				processCallback(Buffer.concat(state.chunks, state.size), state.encoding, () => {
+				processCallback(concatUint8Arrays(state.chunks, state.size), state.encoding, () => {
 					if (chunk.length === 0) {
 						done();
 						return;
@@ -84,7 +84,7 @@ export default class FirstChunkStream extends DuplexStream {
 
 		this.on('finish', () => {
 			if (!state.isSent) {
-				return processCallback(Buffer.concat(state.chunks, state.size), state.encoding, () => {
+				return processCallback(concatUint8Arrays(state.chunks, state.size), state.encoding, () => {
 					state.manager.programPush(null, state.encoding);
 				});
 			}

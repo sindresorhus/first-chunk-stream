@@ -1,6 +1,7 @@
 import {Buffer} from 'node:buffer';
 import test from 'ava';
 import streamtest from 'streamtest';
+import {concatUint8Arrays, stringToUint8Array, uint8ArrayToString} from 'uint8array-extras';
 import FirstChunkStream from './index.js';
 
 const content = 'unicorn rainbows \ncake';
@@ -65,11 +66,11 @@ for (const version of streamtest.versions) {
 				}),
 			);
 
-			stream.write(Buffer.from(content.slice(0, 3)));
+			stream.write(stringToUint8Array(content.slice(0, 3)));
 			stream.emit('error', new Error('Hey!'));
-			stream.write(Buffer.from(content.slice(3, 7)));
+			stream.write(stringToUint8Array(content.slice(3, 7)));
 			stream.emit('error', new Error('Hey!'));
-			stream.write(Buffer.from(content.slice(7)));
+			stream.write(stringToUint8Array(content.slice(7)));
 			stream.end();
 		},
 	);
@@ -102,8 +103,8 @@ for (const version of streamtest.versions) {
 				}),
 			);
 
-			stream.write(Buffer.from(content.slice(0, 7)));
-			stream.write(Buffer.from(content.slice(7)));
+			stream.write(stringToUint8Array(content.slice(0, 7)));
+			stream.write(stringToUint8Array(content.slice(7)));
 			stream.end();
 		},
 	);
@@ -117,8 +118,8 @@ for (const version of streamtest.versions) {
 				new FirstChunkStream(
 					{chunkSize: 0},
 					async chunk => {
-						t.is(chunk.toString('utf8'), '');
-						return Buffer.from('popop');
+						t.is(uint8ArrayToString(chunk), '');
+						return stringToUint8Array('popop');
 					},
 				),
 			)
@@ -146,7 +147,7 @@ for (const version of streamtest.versions) {
 					new FirstChunkStream(
 						{chunkSize: 7},
 						async chunk => {
-							t.is(chunk.toString('utf8'), content.slice(0, 7));
+							t.is(uint8ArrayToString(chunk), content.slice(0, 7));
 							return chunk;
 						},
 					),
@@ -176,7 +177,7 @@ for (const version of streamtest.versions) {
 					new FirstChunkStream(
 						{chunkSize: 7},
 						async chunk => {
-							t.is(chunk.toString('utf8'), content.slice(0, 7));
+							t.is(uint8ArrayToString(chunk), content.slice(0, 7));
 							return chunk;
 						},
 					),
@@ -206,7 +207,7 @@ for (const version of streamtest.versions) {
 					new FirstChunkStream(
 						{chunkSize: 7},
 						async chunk => {
-							t.is(chunk.toString('utf8'), content.slice(0, 7));
+							t.is(uint8ArrayToString(chunk), content.slice(0, 7));
 							return chunk;
 						},
 					),
@@ -236,7 +237,7 @@ for (const version of streamtest.versions) {
 				new FirstChunkStream(
 					{chunkSize: 7},
 					async chunk => {
-						t.is(chunk.toString('utf8'), content.slice(0, 7));
+						t.is(uint8ArrayToString(chunk), content.slice(0, 7));
 
 						firstChunkStream.pipe(
 							streamtest[version].toText((error, text) => {
@@ -266,8 +267,8 @@ for (const version of streamtest.versions) {
 				new FirstChunkStream(
 					{chunkSize: 7},
 					async chunk => {
-						t.is(chunk.toString('utf8'), 'abc');
-						return Buffer.from('b');
+						t.is(uint8ArrayToString(chunk), 'abc');
+						return stringToUint8Array('b');
 					},
 				),
 			)
@@ -295,7 +296,7 @@ for (const version of streamtest.versions) {
 					new FirstChunkStream(
 						{chunkSize: 7},
 						async chunk => {
-							t.is(chunk.toString('utf8'), content.slice(0, 7));
+							t.is(uint8ArrayToString(chunk), content.slice(0, 7));
 							return Buffer.alloc(0);
 						},
 					),
@@ -325,8 +326,8 @@ for (const version of streamtest.versions) {
 					new FirstChunkStream(
 						{chunkSize: 7},
 						async chunk => {
-							t.is(chunk.toString('utf8'), content.slice(0, 7));
-							return {buffer: chunk.toString('utf8'), encoding: 'utf8'};
+							t.is(uint8ArrayToString(chunk), content.slice(0, 7));
+							return {buffer: uint8ArrayToString(chunk), encoding: 'utf8'};
 						},
 					),
 				)
@@ -355,7 +356,7 @@ for (const version of streamtest.versions) {
 					new FirstChunkStream(
 						{chunkSize: 7},
 						async chunk => {
-							t.is(chunk.toString('utf8'), content.slice(0, 7));
+							t.is(uint8ArrayToString(chunk), content.slice(0, 7));
 							return FirstChunkStream.stop;
 						},
 					),
@@ -385,8 +386,8 @@ for (const version of streamtest.versions) {
 					new FirstChunkStream(
 						{chunkSize: 7},
 						async chunk => {
-							t.is(chunk.toString('utf8'), content.slice(0, 7));
-							return Buffer.concat([chunk, Buffer.from('plop')]);
+							t.is(uint8ArrayToString(chunk), content.slice(0, 7));
+							return concatUint8Arrays([chunk, stringToUint8Array('plop')]);
 						},
 					),
 				)
@@ -415,8 +416,8 @@ for (const version of streamtest.versions) {
 					new FirstChunkStream(
 						{chunkSize: 7},
 						async chunk => {
-							t.is(chunk.toString('utf8'), content.slice(0, 7));
-							return Buffer.from('plop');
+							t.is(uint8ArrayToString(chunk), content.slice(0, 7));
+							return stringToUint8Array('plop');
 						},
 					),
 				)
